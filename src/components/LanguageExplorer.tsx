@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, orderBy, Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User } from 'firebase/auth';
 import { db, auth, uploadAudio } from '../lib/firebase';
-import { Languages, Book, Scroll, Map, Volume2, Mic, CheckCircle2, ChevronRight, Share2, MessageSquare, Play, User as UserIcon, Users, XCircle, Loader2, Square, Edit2, Check, X, LogIn, LogOut, Sparkles, Database, Upload, FileAudio, Trash2 } from 'lucide-react';
+import { Languages, Book, Scroll, Map, Volume2, Mic, CheckCircle2, ChevronRight, Share2, MessageSquare, Play, User as UserIcon, Users, XCircle, Loader2, Square, Edit2, Check, X, LogIn, LogOut, Sparkles, Database, Upload, FileAudio, Trash2, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { speak, playEdoSpeech, recordSpeech, recordAudioBlob, EDO_PERSONAS, VoicePersona, customAudioCache } from '../lib/voice';
@@ -202,10 +202,14 @@ export default function LanguageExplorer({
       const updateData: any = { word, translation, phonetic, updatedAt: serverTimestamp() };
 
       if (audioBlob) {
-        const audioUrl = await uploadAudio(`vocab-audio/${Date.now()}-${translation}.webm`, audioBlob);
-        updateData.audioUrl = audioUrl;
-        // Immediately update the in-memory cache so playback works site-wide without waiting for Firestore roundtrip
-        customAudioCache[translation.toLowerCase().trim()] = audioUrl;
+        try {
+          const audioUrl = await uploadAudio(`vocab-audio/${Date.now()}-${translation}.webm`, audioBlob);
+          updateData.audioUrl = audioUrl;
+          // Immediately update the in-memory cache so playback works site-wide without waiting for Firestore roundtrip
+          customAudioCache[translation.toLowerCase().trim()] = audioUrl;
+        } catch (audioErr) {
+          console.warn('Audio upload failed, saving text only:', audioErr);
+        }
       }
 
       const { setDoc } = await import('firebase/firestore');
@@ -225,10 +229,14 @@ export default function LanguageExplorer({
     try {
       const updateData: any = { word, translation, phonetic, updatedAt: serverTimestamp() };
       if (audioBlob) {
-        const audioUrl = await uploadAudio(`vocab-audio/core-${Date.now()}-${originalId}.webm`, audioBlob);
-        updateData.audioUrl = audioUrl;
-        customAudioCache[translation.toLowerCase().trim()] = audioUrl;
-        customAudioCache[originalId.toLowerCase().trim()] = audioUrl;
+        try {
+          const audioUrl = await uploadAudio(`vocab-audio/core-${Date.now()}-${originalId}.webm`, audioBlob);
+          updateData.audioUrl = audioUrl;
+          customAudioCache[translation.toLowerCase().trim()] = audioUrl;
+          customAudioCache[originalId.toLowerCase().trim()] = audioUrl;
+        } catch (audioErr) {
+          console.warn('Audio upload failed, saving text only:', audioErr);
+        }
       }
       const { setDoc: firestoreSetDoc, doc: firestoreDoc, deleteDoc: firestoreDeleteDoc } = await import('firebase/firestore');
 
@@ -459,113 +467,76 @@ export default function LanguageExplorer({
         )}
 
         {activeSection === 'dictionary' && (
-          <motion.div
-            key="dictionary"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-8"
-          >
-            <div className="bg-[#F5F5F0] p-12 rounded-[40px]">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-2xl font-serif mb-2">Lexical Dictionary</h3>
-                  <p className="text-sm text-[#5A5A40]">Foundational and personal vocabulary for {language.name}.</p>
-                </div>
-                <div className="flex gap-2">
-                  {isAdmin && (
-                    <button 
-                      onClick={() => setIsAddingWord(!isAddingWord)}
-                      className="flex items-center gap-2 px-6 py-3 bg-[#5A5A40] text-white rounded-full text-xs font-bold hover:bg-[#4A4A30] transition-all shadow-md active:scale-95"
-                    >
-                      <Sparkles size={16} />
-                      Admin: Add to Global
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => {
-                      if (!currentUser) login();
-                      else setIsAddingWord(!isAddingWord);
-                    }}
-                    className="flex items-center gap-2 px-6 py-3 bg-[#1A1A1A] text-white rounded-full text-xs font-bold hover:bg-[#333] transition-all shadow-md active:scale-95"
-                  >
-                    {!currentUser ? <LogIn size={16} /> : (isAddingWord ? <X size={16} /> : <Play size={16} className="rotate-90" />)}
-                    {!currentUser ? 'Sign in to Add' : (isAddingWord ? 'Cancel' : 'Personal Word')}
-                  </button>
-                  <Languages className="w-8 h-8 text-[#5A5A40] opacity-40 ml-4" />
-                </div>
+          <motion.div key="dictionary" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            {/* Header bar */}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-serif text-[#1A1A1A]">Lexical Dictionary</h3>
+                <p className="text-xs text-[#5A5A40] mt-0.5">{lexiconCategories.reduce((n, c) => n + c.entries.length, 0)} words · hover to play · click pencil to edit</p>
               </div>
+              <div className="flex gap-2">
+                {isAdmin && (
+                  <button onClick={() => setIsAddingWord(!isAddingWord)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#5A5A40] text-white rounded-full text-xs font-bold hover:bg-[#4A4A30] transition-all">
+                    <Sparkles size={13} /> Add Word
+                  </button>
+                )}
+                {currentUser && (
+                  <button onClick={() => setIsAddingWord(!isAddingWord)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#1A1A1A] text-white rounded-full text-xs font-bold hover:bg-[#333] transition-all">
+                    {isAddingWord ? <X size={13} /> : <Plus size={13} />}
+                    {isAddingWord ? 'Cancel' : 'My Word'}
+                  </button>
+                )}
+              </div>
+            </div>
 
+            {/* Add word form */}
+            <AnimatePresence>
               {isAddingWord && (
-                <motion.div 
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="mb-8 overflow-hidden"
-                >
-                  <AddWordForm 
-                    onAdd={(w, t, p, blob) => addWord(w, t, p, isAdmin, blob)} 
-                    onCancel={() => setIsAddingWord(false)} 
-                    isAdmin={isAdmin}
-                  />
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
+                  <AddWordForm onAdd={(w, t, p, blob) => addWord(w, t, p, isAdmin, blob)} onCancel={() => setIsAddingWord(false)} isAdmin={isAdmin} />
                 </motion.div>
               )}
-              
-              {/* Personal Vocabulary */}
-              {currentUser ? (
-                <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                  {personalVocab.map((item) => (
-                    <VocabularyItem
-                      key={item.id}
-                      id={item.id}
-                      word={item.word}
-                      translation={item.translation}
-                      phonetic={item.phonetic}
-                      audioUrl={item.audioUrl}
-                      persona={selectedPersona}
-                      onDelete={() => deleteWord(item.id)}
-                      onUpdate={(w, t, p, blob) => updateWord(item.id, w, t, p, false, blob)}
-                      isPersonal
-                      isAdmin={isAdmin}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-6 bg-white/50 border border-dashed border-[#D5D5C5] rounded-3xl text-center mb-6">
-                  <p className="text-sm text-[#5A5A40] italic">Sign in to add and save your own words to the Edo Lexicon.</p>
-                </div>
-              )}
+            </AnimatePresence>
 
-              {/* Core Vocabulary from useLexicon */}
-              {lexiconLoading ? (
-                <div className="text-center py-8 text-[#5A5A40]">Loading lexicon...</div>
-              ) : (
-                <div className="space-y-10">
-                  {lexiconCategories.map((cat) => (
-                    <div key={cat.category}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <h4 className="text-sm font-bold uppercase tracking-widest text-[#5A5A40]">{cat.category}</h4>
-                        <span className="text-[10px] bg-[#5A5A40]/10 text-[#5A5A40] px-2 py-0.5 rounded-full font-bold">{cat.entries.length}</span>
-                      </div>
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {cat.entries.map((entry) => (
-                          <VocabularyItem
-                            key={entry.id}
-                            word={entry.english}
-                            translation={entry.edoWord}
-                            phonetic={entry.phonetic}
-                            audioUrl={entry.audioUrl}
-                            persona={selectedPersona}
-                            isAdmin={isAdmin}
-                            onUpdate={(w, t, p, blob) => updateCoreWord(entry.id, w, t, p, blob)}
-                          />
-                        ))}
-                      </div>
-                    </div>
+            {/* Personal vocab */}
+            {currentUser && personalVocab.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#5A5A40] mb-2 px-1">My Words</p>
+                <div className="bg-white rounded-2xl border border-[#E5E5E5] overflow-hidden divide-y divide-[#F0F0F0]">
+                  {personalVocab.map(item => (
+                    <WordRow key={item.id} word={item.word} translation={item.translation} phonetic={item.phonetic}
+                      audioUrl={item.audioUrl} isAdmin={isAdmin} isPersonal
+                      onDelete={() => deleteWord(item.id)}
+                      onUpdate={(w, t, p, blob) => updateWord(item.id, w, t, p, false, blob)} />
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Core lexicon by category */}
+            {lexiconLoading ? (
+              <div className="text-center py-8 text-[#5A5A40] text-sm">Loading lexicon...</div>
+            ) : (
+              <div className="space-y-4">
+                {lexiconCategories.map(cat => (
+                  <div key={cat.category}>
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-[#5A5A40] mb-1.5 px-1 flex items-center gap-2">
+                      {cat.category}
+                      <span className="text-[#A1A1A1] font-normal normal-case tracking-normal">{cat.entries.length}</span>
+                    </p>
+                    <div className="bg-white rounded-2xl border border-[#E5E5E5] overflow-hidden divide-y divide-[#F0F0F0]">
+                      {cat.entries.map(entry => (
+                        <WordRow key={entry.id} word={entry.english} translation={entry.edoWord}
+                          phonetic={entry.phonetic} audioUrl={entry.audioUrl} isAdmin={isAdmin}
+                          onUpdate={(w, t, p, blob) => updateCoreWord(entry.id, w, t, p, blob)} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -722,15 +693,14 @@ export default function LanguageExplorer({
                         </div>
                         <span className="text-[10px] font-bold text-white bg-white/10 px-3 py-1 rounded-full uppercase tracking-tighter">{communityVocab.length} Entries</span>
                       </div>
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        {communityVocab.map((item, i) => (
-                          <VocabularyItem 
+                      <div className="divide-y divide-[#2A2A2A]">
+                        {communityVocab.map((item) => (
+                          <WordRow
                              key={item.id}
-                             id={item.id}
                              word={item.word}
                              translation={item.translation}
                              phonetic={item.phonetic}
-                             persona={selectedPersona}
+                             audioUrl={item.audioUrl}
                              onUpdate={(w, t, p, blob) => updateWord(item.id, w, t, p, true, blob)}
                              isPersonal={isAdmin || item.userId === currentUser?.uid}
                              onDelete={isAdmin || item.userId === currentUser?.uid ? () => deleteWord(item.id, true) : undefined}
@@ -747,16 +717,15 @@ export default function LanguageExplorer({
                       <h4 className="text-lg font-serif">{cat.category}</h4>
                       <span className="text-[10px] font-bold text-[#5A5A40] bg-[#F5F5F0] px-3 py-1 rounded-full uppercase tracking-tighter">{cat.items.length} Entries</span>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-0 divide-y divide-[#F0F0F0]">
                       {cat.items.map((item, i) => (
-                        <VocabularyItem 
-                           key={i} 
-                           word={item.term} 
-                           translation={item.translation} 
-                           phonetic={item.phonetic} 
-                           persona={selectedPersona} 
-                           onPublish={isAdmin ? (w, t, p) => addWord(w, t, p, true) : undefined}
+                        <WordRow
+                           key={i}
+                           word={item.term}
+                           translation={item.translation}
+                           phonetic={item.phonetic}
                            isAdmin={isAdmin}
+                           onUpdate={isAdmin ? (w, t, p, blob) => updateCoreWord(item.term, w, t, p, blob) : undefined}
                         />
                       ))}
                     </div>
@@ -794,156 +763,67 @@ function StatBox({ label, value }: { label: string, value: string }) {
   );
 }
 
-function VocabularyItem({
-  id, word, translation, phonetic: defaultPhonetic, audioUrl: initialAudioUrl,
-  persona, onDelete, isPersonal, onUpdate, onPublish, isAdmin
-}: {
-  id?: string;
-  word: string;
-  translation: string;
-  phonetic: string;
-  audioUrl?: string;
-  persona: VoicePersona;
+function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdmin, isPersonal, onDelete, onUpdate }: {
+  word: string; translation: string; phonetic: string; audioUrl?: string;
+  isAdmin?: boolean; isPersonal?: boolean;
   onDelete?: () => void;
-  isPersonal?: boolean;
-  onUpdate?: (w: string, t: string, p: string, audioBlob?: Blob) => Promise<void>;
-  onPublish?: (w: string, t: string, p: string) => void;
-  isAdmin?: boolean;
+  onUpdate?: (w: string, t: string, p: string, blob?: Blob) => Promise<void>;
 }) {
-  const [status, setStatus] = useState<'idle' | 'listening' | 'processing' | 'success' | 'fail'>('idle');
-  const [feedback, setFeedback] = useState<string>('');
-  const [activeRecognition, setActiveRecognition] = useState<{ stop: () => void } | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const recorderRef = React.useRef<{ stop: () => void } | null>(null);
-
-  const [customPhonetic, setCustomPhonetic] = useState<string>(() => {
-    const saved = localStorage.getItem(`phonetic_${translation}`);
-    return saved || defaultPhonetic;
-  });
-
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [editValue, setEditValue] = useState(customPhonetic);
   const [editWord, setEditWord] = useState(word);
   const [editTranslation, setEditTranslation] = useState(translation);
-
-  useEffect(() => {
-    setEditWord(word);
-    setEditTranslation(translation);
-  }, [word, translation]);
-
-  // Admin audio recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [editPhonetic, setEditPhonetic] = useState(phonetic);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(initialAudioUrl ?? null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recorderRef = React.useRef<{ stop: () => void } | null>(null);
   const timerRef = React.useRef<any>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Always sync local preview from Firestore — whether it was just saved or externally updated
-  useEffect(() => {
-    setAudioPreviewUrl(initialAudioUrl ?? null);
-  }, [initialAudioUrl]);
+  // Sync when parent data changes
+  React.useEffect(() => { setAudioPreviewUrl(initialAudioUrl ?? null); }, [initialAudioUrl]);
 
-  const startAdminRecording = async () => {
-    try {
-      setIsRecording(true);
-      setRecordingSeconds(0);
-      setAudioBlob(null);
-      timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
-      const recorder = recordAudioBlob((s) => {
-        if (s === 'error' || s === 'done') { setIsRecording(false); clearInterval(timerRef.current); }
-      });
-      recorderRef.current = recorder;
-      const { blob } = await recorder.promise;
-      setIsRecording(false);
-      clearInterval(timerRef.current);
-      recorderRef.current = null;
-      setAudioBlob(blob);
-      setAudioPreviewUrl(URL.createObjectURL(blob));
-    } catch (err) {
-      console.error('Admin recording failed', err);
-      setIsRecording(false);
-      clearInterval(timerRef.current);
-    }
-  };
-
-  const stopAdminRecording = () => {
-    recorderRef.current?.stop();
-    recorderRef.current = null;
-    setIsRecording(false);
-    clearInterval(timerRef.current);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setAudioBlob(file);
-    setAudioPreviewUrl(URL.createObjectURL(file));
-  };
-
-  const playAudio = () => {
+  const playAudio = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (audioPreviewUrl) new Audio(audioPreviewUrl).play();
     else playEdoSpeech(translation);
   };
 
-  const handlePractice = async () => {
-    try {
-      setFeedback('');
-      const recognition = recordSpeech((s) => {
-        setStatus(current => {
-          if (current === 'success' || current === 'fail') return current;
-          if (s === 'done') return current === 'listening' ? 'processing' : current;
-          if (s === 'listening') return 'listening';
-          if (s === 'processing') return 'processing';
-          if (s === 'error') return 'fail';
-          return current;
-        });
-      });
-      setActiveRecognition(recognition);
-      const transcript = await recognition.promise;
-      setActiveRecognition(null);
-      const normalizedTarget = translation.toLowerCase().replace(/[ọẹ]/g, m => m === 'ọ' ? 'o' : 'e');
-      const isMatch = transcript.toLowerCase().includes(normalizedTarget) || normalizedTarget.includes(transcript.toLowerCase());
-      setStatus(isMatch ? 'success' : 'fail');
-      setFeedback(isMatch ? 'Excellent pronunciation!' : `Heard: "${transcript}"`);
-      setTimeout(() => setStatus('idle'), 3000);
-    } catch (error) {
-      setActiveRecognition(null);
-      setStatus('fail');
-      setFeedback(error === 'No speech detected' ? 'Silence detected' : 'Retry speaking');
-      setTimeout(() => setStatus('idle'), 2000);
-    }
+  const startRecording = async () => {
+    setIsRecording(true); setRecordingSeconds(0); setAudioBlob(null);
+    timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+    const recorder = recordAudioBlob(s => { if (s === 'error' || s === 'done') { setIsRecording(false); clearInterval(timerRef.current); } });
+    recorderRef.current = recorder;
+    const { blob } = await recorder.promise;
+    setIsRecording(false); clearInterval(timerRef.current); recorderRef.current = null;
+    setAudioBlob(blob); setAudioPreviewUrl(URL.createObjectURL(blob));
   };
 
-  const handleStop = () => {
-    if (activeRecognition) {
-      activeRecognition.stop();
-      setActiveRecognition(null);
-      setStatus('idle');
-      setFeedback('Stopped');
-      setTimeout(() => setFeedback(''), 2000);
-    }
+  const stopRecording = () => { recorderRef.current?.stop(); recorderRef.current = null; setIsRecording(false); clearInterval(timerRef.current); };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    setAudioBlob(f); setAudioPreviewUrl(URL.createObjectURL(f));
   };
 
-  const saveCorrection = async () => {
+  const save = async () => {
+    if (!onUpdate) return;
     setIsSaving(true);
     try {
-      setCustomPhonetic(editValue);
-      localStorage.setItem(`phonetic_${editTranslation}`, editValue);
-      if (onUpdate) {
-        await onUpdate(editWord, editTranslation, editValue, audioBlob ?? undefined);
-        setAudioBlob(null);
-      }
+      await onUpdate(editWord, editTranslation, editPhonetic, audioBlob ?? undefined);
+      setAudioBlob(null);
       setIsEditing(false);
-    } catch (error) {
-      console.error("Error saving correction:", error);
-      alert("Failed to save changes: " + (error instanceof Error ? error.message : String(error)));
+    } catch (err) {
+      console.error('Save failed:', err);
+      setIsEditing(false); // close anyway
     } finally {
       setIsSaving(false);
     }
   };
 
-  const isWorking = status === 'listening' || status === 'processing';
+  const inputCls = 'w-full border border-[#E5E5E5] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#5A5A40] focus:ring-1 focus:ring-[#5A5A40] transition-colors bg-white text-[#1A1A1A]';
 
   return (
     <div className={`flex flex-col p-6 bg-white rounded-3xl border transition-all relative group ${
@@ -1005,8 +885,8 @@ function VocabularyItem({
                 <label className="text-[9px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-1">Phonetic Pronunciation Guide <span className="text-[#5A5A40]">(replaces existing)</span></label>
                 <input
                   disabled={isSaving}
-                  value={editValue}
-                  onChange={e => setEditValue(e.target.value)}
+                  value={editPhonetic}
+                  onChange={e => setEditPhonetic(e.target.value)}
                   className="w-full text-sm italic border border-[#E5E5E5] rounded-xl px-3 py-2 outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all text-[#5A5A40]"
                   placeholder="e.g. /Oh-bo-wee-eh/"
                 />
@@ -1019,7 +899,7 @@ function VocabularyItem({
                     🎙 Record Audio Pronunciation <span className="text-[#A1A1A1] font-normal">(replaces existing audio)</span>
                   </span>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button type="button" onClick={isRecording ? stopAdminRecording : startAdminRecording}
+                    <button type="button" onClick={isRecording ? stopRecording : startRecording}
                       disabled={isSaving}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-[#5A5A40] text-white hover:bg-[#4A4A30]'} disabled:opacity-50`}>
                       {isRecording ? <Square size={10} fill="currentColor" /> : <Mic size={10} />}
@@ -1055,11 +935,11 @@ function VocabularyItem({
               {/* Save / Cancel */}
               <div className="flex gap-2 pt-1 border-t border-[#E5E5E5]">
                 <button
-                  onClick={saveCorrection}
+                  onClick={save}
                   disabled={isSaving}
                   className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[#1A1A1A] px-4 py-2 rounded-full hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 justify-center"
                 >
-                  <Check size={11} /> {isSaving ? 'Saving changes...' : (onUpdate ? '✓ Update & Replace' : 'Apply Changes')}
+                  <Check size={11} /> {isSaving ? 'Saving...' : (onUpdate ? '✓ Save Changes' : 'Apply')}
                 </button>
                 <button onClick={() => { setIsEditing(false); setAudioBlob(null); setAudioPreviewUrl(initialAudioUrl ?? null); }} className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1A1] px-4 py-2 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all">
                   Cancel
@@ -1071,23 +951,14 @@ function VocabularyItem({
               <div className="flex items-center gap-2">
                 <h5 className="text-xl font-serif text-[#1A1A1A]">{translation}</h5>
                 {(isAdmin || onUpdate) && (
-                  <button onClick={() => { setIsEditing(true); setEditWord(word); setEditTranslation(translation); setEditValue(customPhonetic); }}
+                <button onClick={() => { setIsEditing(true); setEditWord(word); setEditTranslation(translation); setEditPhonetic(phonetic); }}
                     className="p-1 text-[#A1A1A1] hover:text-[#5A5A40] transition-colors" title="Edit / Record pronunciation">
                     <Edit2 size={12} />
                   </button>
                 )}
               </div>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className="text-[10px] text-[#A1A1A1] italic">/{customPhonetic}/</span>
-                {onPublish && isAdmin && (
-                  <button onClick={() => onPublish(word, translation, customPhonetic)}
-                    className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest text-[#5A5A40] bg-[#5A5A40]/10 px-2.5 py-1 rounded-full hover:bg-[#5A5A40] hover:text-white transition-all">
-                    <Sparkles size={10} /> Publish
-                  </button>
-                )}
-                {feedback && (
-                  <span className={`text-[9px] font-bold uppercase tracking-tight ${status === 'success' ? 'text-[#2D5A27]' : 'text-[#A12D27]'}`}>{feedback}</span>
-                )}
+                <span className="text-[10px] text-[#A1A1A1] italic">/{phonetic}/</span>
               </div>
             </>
           )}
@@ -1095,32 +966,12 @@ function VocabularyItem({
 
         {!isEditing && (
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={playAudio} disabled={isWorking}
-              className="p-3 bg-[#F5F5F0] text-[#5A5A40] rounded-full hover:bg-[#5A5A40] hover:text-white transition-all shadow-sm disabled:opacity-30 relative"
+            <button onClick={playAudio}
+              className="p-3 bg-[#F5F5F0] text-[#5A5A40] rounded-full hover:bg-[#5A5A40] hover:text-white transition-all shadow-sm relative"
               title={audioPreviewUrl ? 'Play recorded audio' : 'Listen (TTS)'}>
               <Volume2 size={18} />
               {audioPreviewUrl && <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white" />}
             </button>
-
-            {status === 'listening' ? (
-              <button onClick={handleStop} className="px-4 py-3 bg-[#1A1A1A] text-white rounded-full transition-all shadow-lg hover:bg-black flex items-center gap-2 animate-pulse">
-                <Square size={14} fill="currentColor" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Stop</span>
-              </button>
-            ) : (
-              <button onClick={handlePractice} disabled={status === 'processing'}
-                className={`p-3 rounded-full transition-all shadow-sm flex items-center justify-center min-w-[44px] ${
-                  status === 'processing' ? 'bg-[#5A5A40] text-white' :
-                  status === 'success' ? 'bg-[#2D5A27] text-white' :
-                  status === 'fail' ? 'bg-[#A12D27] text-white' :
-                  'bg-[#1A1A1A] text-white hover:bg-[#333]'
-                }`} title="Practice pronunciation">
-                {status === 'processing' ? <Loader2 size={18} className="animate-spin" /> :
-                  status === 'success' ? <CheckCircle2 size={18} /> :
-                  status === 'fail' ? <XCircle size={18} /> :
-                  <Mic size={18} />}
-              </button>
-            )}
           </div>
         )}
       </div>
