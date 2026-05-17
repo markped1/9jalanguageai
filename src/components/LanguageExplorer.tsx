@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, orderBy, Timestamp } from 'firebase/firestore';
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User } from 'firebase/auth';
 import { db, auth, uploadAudio } from '../lib/firebase';
 import { Languages, Book, Scroll, Map, Volume2, Mic, CheckCircle2, ChevronRight, Share2, MessageSquare, Play, User as UserIcon, Users, XCircle, Loader2, Square, Edit2, Check, X, LogIn, LogOut, Sparkles, Database, Upload, FileAudio, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -139,22 +139,10 @@ export default function LanguageExplorer({
   // This handles races where the app triggers a write before the anonymous sign-in completes.
   const ensureSignedIn = async (): Promise<import('firebase/auth').User> => {
     if (auth.currentUser) return auth.currentUser;
-    try {
-      await signInAnonymously(auth);
-    } catch (err) {
-      const e: any = err;
-      if (e && e.code === 'auth/admin-restricted-operation') {
-        console.warn('Anonymous sign-in disabled; falling back to interactive sign-in.');
-        try { await login(); } catch (loginErr) { console.error('Interactive sign-in failed', loginErr); }
-      }
-    }
-    return new Promise((resolve, reject) => {
-      const start = Date.now();
-      const unsub = onAuthStateChanged(auth, (u) => {
-        if (u) { unsub(); resolve(u); }
-        else if (Date.now() - start > 5000) { unsub(); reject(new Error('Auth timeout')); }
-      });
-    });
+    // No anonymous auth — prompt Google sign-in
+    await login();
+    if (auth.currentUser) return auth.currentUser;
+    throw new Error('Please sign in to continue.');
   };
 
   const login = async () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, User, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, signIn, db } from './lib/firebase';
 import { Globe, BookOpen, Brain, Languages, LogOut, Database, MessageSquare, GraduationCap, Users, Key, ArrowRight } from 'lucide-react';
@@ -41,23 +41,11 @@ export default function App() {
       setDeveloperUser(JSON.parse(savedDev));
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
       if (u && !u.isAnonymous) {
         // Real Google user — clear any dev session
         setDeveloperUser(null);
         localStorage.removeItem('lexicon_dev_user');
-      }
-      if (!u) {
-        // No user — try anonymous sign-in so Firestore writes have auth.
-        // If it fails or is disabled, still unblock the loading screen.
-        try {
-          await signInAnonymously(auth);
-          // onAuthStateChanged will fire again with the anonymous user — return here
-          return;
-        } catch (err) {
-          console.warn('Anonymous sign-in failed, continuing as unauthenticated:', err);
-          // Fall through — set loading false so the login screen shows
-        }
       }
       setUser(u);
       setLoading(false);
@@ -94,9 +82,6 @@ export default function App() {
       const devData = snap.docs[0].data();
       setDeveloperUser(devData);
       localStorage.setItem('lexicon_dev_user', JSON.stringify(devData));
-      
-      // Sign in anonymously to get a UID for storage uploads
-      await signInAnonymously(auth);
       
       // Route directly to explorer
       setSelectedLanguage('Edo');
