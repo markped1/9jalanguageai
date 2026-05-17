@@ -10,15 +10,15 @@ export const auth = getAuth();
 export const storage = getStorage(app);
 
 export const uploadAudio = async (path: string, blob: Blob): Promise<string> => {
+  // Try Firebase Storage first with a generous timeout
   try {
     const audioRef = ref(storage, path);
-    const uploadPromise = uploadBytes(audioRef, blob).then(() => getDownloadURL(audioRef));
-    const timeoutPromise = new Promise<string>((_, reject) => 
-      setTimeout(() => reject(new Error("Storage upload timed out")), 2000)
-    );
-    return await Promise.race([uploadPromise, timeoutPromise]);
+    const snapshot = await uploadBytes(audioRef, blob);
+    const url = await getDownloadURL(snapshot.ref);
+    return url;
   } catch (err) {
-    console.warn("Firebase Storage upload failed or timed out. Falling back to inline base64 audio.", err);
+    console.warn("Firebase Storage upload failed. Falling back to base64 data URL.", err);
+    // Fallback: convert to base64 data URL so audio still works locally
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = () => reject(new Error("Failed to convert audio to base64"));

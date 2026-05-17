@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, orderBy, Timestamp } from 'firebase/firestore';
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User } from 'firebase/auth';
+import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User, signInAnonymously } from 'firebase/auth';
 import { db, auth, uploadAudio } from '../lib/firebase';
 import { Languages, Book, Scroll, Map, Volume2, Mic, CheckCircle2, ChevronRight, Share2, MessageSquare, Play, User as UserIcon, Users, XCircle, Loader2, Square, Edit2, Check, X, LogIn, LogOut, Sparkles, Database, Upload, FileAudio, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -135,6 +135,28 @@ export default function LanguageExplorer({
     seedLexiconToFirestore().catch(() => { /* non-critical */ });
   }, []);
 
+  // Ensure we have a signed-in user before attempting writes to Firestore.
+  // This handles races where the app triggers a write before the anonymous sign-in completes.
+  const ensureSignedIn = async (): Promise<import('firebase/auth').User> => {
+    if (auth.currentUser) return auth.currentUser;
+    try {
+      await signInAnonymously(auth);
+    } catch (err) {
+      const e: any = err;
+      if (e && e.code === 'auth/admin-restricted-operation') {
+        console.warn('Anonymous sign-in disabled; falling back to interactive sign-in.');
+        try { await login(); } catch (loginErr) { console.error('Interactive sign-in failed', loginErr); }
+      }
+    }
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const unsub = onAuthStateChanged(auth, (u) => {
+        if (u) { unsub(); resolve(u); }
+        else if (Date.now() - start > 5000) { unsub(); reject(new Error('Auth timeout')); }
+      });
+    });
+  };
+
   const login = async () => {
     const provider = new GoogleAuthProvider();
     try {
@@ -147,9 +169,12 @@ export default function LanguageExplorer({
   const logout = () => signOut(auth);
 
   const addWord = async (word: string, translation: string, phonetic: string, isGlobal: boolean = false, audioBlob?: Blob) => {
-    if (!currentUser) return;
-    
-    const path = isGlobal ? `communityVocab` : `users/${currentUser.uid}/personalVocab`;
+    const effectiveUser = currentUser || (await ensureSignedIn());
+    if (!effectiveUser) return;
+    const path = isGlobal ? `communityVocab` : `users/${effectiveUser.uid}/personalVocab`;
+
+    console.log('LanguageExplorer.addWord: about to write', { path, user: { uid: effectiveUser.uid, isAnonymous: effectiveUser.isAnonymous, email: effectiveUser.email } });
+
     try {
       let audioUrl: string | null = null;
 
@@ -163,8 +188,8 @@ export default function LanguageExplorer({
         translation,
         phonetic,
         createdAt: serverTimestamp(),
-        userId: currentUser.uid,
-        author: currentUser.displayName,
+        userId: currentUser?.uid,
+        author: currentUser?.displayName,
         isGlobal
       };
       if (audioUrl) newItem.audioUrl = audioUrl;
@@ -172,13 +197,18 @@ export default function LanguageExplorer({
       await addDoc(collection(db, path), newItem);
       setIsAddingWord(false);
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
+      console.error('LanguageExplorer.addWord failed', error);
+      handleFirestoreError(error, OperationType.CREATE, isGlobal ? `communityVocab` : `users/${auth.currentUser?.uid}/personalVocab`);
     }
   };
 
   const updateWord = async (id: string, word: string, translation: string, phonetic: string, isGlobal: boolean = false, audioBlob?: Blob) => {
-    if (!currentUser) return;
-    const path = isGlobal ? `communityVocab/${id}` : `users/${currentUser.uid}/personalVocab/${id}`;
+    try {
+      const effectiveUser = currentUser || (await ensureSignedIn());
+      if (!effectiveUser) return;
+      const path = isGlobal ? `communityVocab/${id}` : `users/${effectiveUser.uid}/personalVocab/${id}`;
+      console.log('LanguageExplorer.updateWord: about to write', { path, user: { uid: effectiveUser.uid, isAnonymous: effectiveUser.isAnonymous, email: effectiveUser.email } });
+
     try {
       const docRef = doc(db, path);
       const updateData: any = { word, translation, phonetic, updatedAt: serverTimestamp() };
@@ -193,25 +223,40 @@ export default function LanguageExplorer({
       const { setDoc } = await import('firebase/firestore');
       await setDoc(docRef, updateData, { merge: true });
     } catch (error) {
+      console.error('LanguageExplorer.updateWord failed', error);
       handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, null);
     }
   };
 
   const updateCoreWord = async (originalId: string, word: string, translation: string, phonetic: string, audioBlob?: Blob) => {
-    if (!currentUser) throw new Error("Not signed in. Please log in again before saving.");
     if (!isAdmin) throw new Error("You do not have admin permissions to edit core vocabulary.");
+    await ensureSignedIn();
     try {
       const updateData: any = { word, translation, phonetic, updatedAt: serverTimestamp() };
       if (audioBlob) {
         const audioUrl = await uploadAudio(`vocab-audio/core-${Date.now()}-${originalId}.webm`, audioBlob);
         updateData.audioUrl = audioUrl;
-        // Immediately update the in-memory cache so playback works site-wide without waiting for Firestore roundtrip
         customAudioCache[translation.toLowerCase().trim()] = audioUrl;
         customAudioCache[originalId.toLowerCase().trim()] = audioUrl;
       }
-      const { setDoc: firestoreSetDoc, doc: firestoreDoc } = await import('firebase/firestore');
-      const docRef = firestoreDoc(db, 'coreVocabAudio', originalId);
-      await firestoreSetDoc(docRef, updateData, { merge: true });
+      const { setDoc: firestoreSetDoc, doc: firestoreDoc, deleteDoc: firestoreDeleteDoc } = await import('firebase/firestore');
+
+      // If the Edo word (translation) changed, we need to move the doc to the new ID
+      if (originalId !== translation) {
+        // Write to new doc ID
+        const newDocRef = firestoreDoc(db, 'coreVocabAudio', translation);
+        await firestoreSetDoc(newDocRef, updateData, { merge: true });
+        // Delete old doc so it doesn't show as a duplicate
+        const oldDocRef = firestoreDoc(db, 'coreVocabAudio', originalId);
+        await firestoreDeleteDoc(oldDocRef);
+      } else {
+        // Same ID — just update in place
+        const docRef = firestoreDoc(db, 'coreVocabAudio', originalId);
+        await firestoreSetDoc(docRef, updateData, { merge: true });
+      }
     } catch (error) {
       console.error('Failed to update core word', error);
       throw error;
@@ -219,12 +264,15 @@ export default function LanguageExplorer({
   };
 
   const deleteWord = async (id: string, isGlobal: boolean = false) => {
-    if (!currentUser) return;
-    const path = isGlobal ? `communityVocab/${id}` : `users/${currentUser.uid}/personalVocab/${id}`;
     try {
+      const effectiveUser = currentUser || (await ensureSignedIn());
+      if (!effectiveUser) return;
+      const path = isGlobal ? `communityVocab/${id}` : `users/${effectiveUser.uid}/personalVocab/${id}`;
+      console.log('LanguageExplorer.deleteWord: about to delete', { path, user: { uid: effectiveUser.uid, isAnonymous: effectiveUser.isAnonymous, email: effectiveUser.email } });
       await deleteDoc(doc(db, path));
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, path);
+      console.error('LanguageExplorer.deleteWord failed', error);
+      handleFirestoreError(error, OperationType.DELETE, isGlobal ? `communityVocab/${id}` : `users/${auth.currentUser?.uid}/personalVocab/${id}`);
     }
   };
 
@@ -895,17 +943,8 @@ function VocabularyItem({
       setCustomPhonetic(editValue);
       localStorage.setItem(`phonetic_${editTranslation}`, editValue);
       if (onUpdate) {
-        // Capture the current local blob URL before clearing so we can keep it showing after save
-        const localPreview = audioBlob ? audioPreviewUrl : null;
-        const savePromise = onUpdate(editWord, editTranslation, editValue, audioBlob ?? undefined);
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Save operation timed out. Please check your internet connection or Firebase Storage rules.")), 10000)
-        );
-        await Promise.race([savePromise, timeoutPromise]);
-        // After successful save: clear the unsaved blob but keep the audio preview URL
-        // (Firestore snapshot will soon update initialAudioUrl, which will sync via useEffect)
+        await onUpdate(editWord, editTranslation, editValue, audioBlob ?? undefined);
         setAudioBlob(null);
-        if (localPreview) setAudioPreviewUrl(localPreview);
       }
       setIsEditing(false);
     } catch (error) {
