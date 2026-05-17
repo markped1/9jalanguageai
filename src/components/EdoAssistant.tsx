@@ -229,14 +229,20 @@ export default function EdoAssistant({ user, isAdmin }: EdoAssistantProps) {
   };
 
   const speakMessage = useCallback((text: string, idx: number) => {
-    // Try to extract the first Edo word/phrase from the response and play cached audio
-    // Pattern: "EdoWord - English" or "EdoWord (English)"
-    const edoWordMatch = text.match(/^([^\-\(\[\n]+)/);
-    const candidate = edoWordMatch ? edoWordMatch[1].trim().toLowerCase() : '';
-    if (candidate && customAudioCache[candidate]) {
+    // Extract the first Edo word/phrase from the response
+    // Try exact cache match first, then fall back to full TTS
+    const firstLine = text.split('\n')[0].trim();
+    const normalized = firstLine.toLowerCase().replace(/[*#_`]/g, '').trim();
+
+    // Check cache for exact match or partial match
+    const cacheKey = Object.keys(customAudioCache).find(k =>
+      normalized.startsWith(k) || normalized.includes(k)
+    );
+
+    if (cacheKey && customAudioCache[cacheKey]) {
       setIsSpeaking(true);
       setSpeakingIdx(idx);
-      const audio = new Audio(customAudioCache[candidate]);
+      const audio = new Audio(customAudioCache[cacheKey]);
       currentAudioRef.current = audio;
       audio.onended = () => { setIsSpeaking(false); setSpeakingIdx(null); };
       audio.onerror = () => { speakText(text, idx); };

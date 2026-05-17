@@ -804,7 +804,7 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
     }
   };
 
-  const inputCls = 'w-full border border-[#E5E5E5] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#5A5A40] focus:ring-1 focus:ring-[#5A5A40] transition-colors bg-white text-[#1A1A1A]';
+  const inputCls = 'w-full border-2 border-[#E5E5E5] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/20 transition-colors bg-white text-[#1A1A1A] placeholder-[#A1A1A1]';
 
   return (
     <div className={`flex flex-col p-6 bg-white rounded-3xl border transition-all relative group ${
