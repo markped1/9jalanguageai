@@ -6,7 +6,7 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Helper: user must be authenticated (Google OR anonymous)
+    // Helper: user must be authenticated
     function isSignedIn() {
       return request.auth != null;
     }
@@ -24,32 +24,32 @@ service cloud.firestore {
     // ── Personal Vocabulary ──────────────────────────────────────────────────
     match /users/{userId}/personalVocab/{vocabId} {
       allow read: if isOwner(userId);
-      // Allow any write as long as the user owns the path — the app validates data
       allow write: if isOwner(userId);
     }
 
     // ── Languages Repository ─────────────────────────────────────────────────
     match /languages/{languageId} {
-      allow read: if true; // Publicly readable
-      allow write: if isSignedIn(); // Any signed-in user (admin, dev, Google) can add languages
+      allow read: if true;
+      allow write: if isSignedIn();
     }
 
     // ── Developer Accounts ───────────────────────────────────────────────────
     match /lexiconDevelopers/{devId} {
-      allow read: if true;             // Public read so login verification works
-      allow write: if isMasterAdmin(); // Only Master Admin can create/remove developers
+      allow read: if true;
+      allow write: if isMasterAdmin();
     }
 
     // ── Core Vocabulary Audio (Lexicon Dictionary) ───────────────────────────
+    // Open write so developers (who may not have Firebase auth) can also edit
     match /coreVocabAudio/{audioId} {
-      allow read: if true;       // Publicly readable for all users
-      allow write: if isSignedIn(); // Any signed-in user (anonymous developer or Google admin) can write
+      allow read: if true;
+      allow write: if true;
     }
 
     // ── Community Vocabulary ─────────────────────────────────────────────────
     match /communityVocab/{vocabId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if true;
     }
 
     // ── AI Training Studio ───────────────────────────────────────────────────
