@@ -11,7 +11,7 @@ import { User as FirebaseUser } from 'firebase/auth';
 import { getEdoChat, ChatAttachment, transcribeWithWhisper } from '../lib/ai';
 import { useLexicon, seedLexiconToFirestore } from '../lib/useLexicon';
 import { ChatMessage } from '../types';
-import { recordAudioBlob } from '../lib/voice';
+import { recordAudioBlob, playEdoSpeech, customAudioCache } from '../lib/voice';
 
 interface EdoAssistantProps {
   user: FirebaseUser;
@@ -193,7 +193,29 @@ export default function EdoAssistant({ user, isAdmin }: EdoAssistantProps) {
     if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null; }
     setIsSpeaking(true);
     if (idx !== undefined) setSpeakingIdx(idx);
+
+    // Strip markdown/code blocks for TTS
     const clean = text.replace(/```[\s\S]*?```/g, 'code block').replace(/[*#_`]/g, '');
+
+    // Check if the entire text (trimmed) matches a cached Edo word exactly
+    const normalized = clean.toLowerCase().trim();
+    if (customAudioCache[normalized]) {
+      const audio = new Audio(customAudioCache[normalized]);
+      currentAudioRef.current = audio;
+      audio.onended = () => { setIsSpeaking(false); setSpeakingIdx(null); onDone?.(); };
+      audio.onerror = () => { setIsSpeaking(false); setSpeakingIdx(null); onDone?.(); };
+      audio.play().catch(() => {
+        // fallback to TTS if audio fails
+        browserTTS(clean, idx, onDone);
+      });
+      return;
+    }
+
+    // For longer responses, use browser TTS (cache is word-level, not sentence-level)
+    browserTTS(clean, idx, onDone);
+  }, []);
+
+  const browserTTS = (clean: string, idx?: number, onDone?: () => void) => {
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.rate = 0.9;
     const voices = window.speechSynthesis.getVoices();
@@ -201,20 +223,26 @@ export default function EdoAssistant({ user, isAdmin }: EdoAssistantProps) {
       || voices.find(v => v.lang.includes('en-GB'))
       || voices.find(v => v.lang.includes('en-US'));
     if (preferred) utterance.voice = preferred;
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setSpeakingIdx(null);
-      onDone?.();
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      setSpeakingIdx(null);
-      onDone?.();
-    };
+    utterance.onend = () => { setIsSpeaking(false); setSpeakingIdx(null); onDone?.(); };
+    utterance.onerror = () => { setIsSpeaking(false); setSpeakingIdx(null); onDone?.(); };
     window.speechSynthesis.speak(utterance);
-  }, []);
+  };
 
   const speakMessage = useCallback((text: string, idx: number) => {
+    // Try to extract the first Edo word/phrase from the response and play cached audio
+    // Pattern: "EdoWord - English" or "EdoWord (English)"
+    const edoWordMatch = text.match(/^([^\-\(\[\n]+)/);
+    const candidate = edoWordMatch ? edoWordMatch[1].trim().toLowerCase() : '';
+    if (candidate && customAudioCache[candidate]) {
+      setIsSpeaking(true);
+      setSpeakingIdx(idx);
+      const audio = new Audio(customAudioCache[candidate]);
+      currentAudioRef.current = audio;
+      audio.onended = () => { setIsSpeaking(false); setSpeakingIdx(null); };
+      audio.onerror = () => { speakText(text, idx); };
+      audio.play().catch(() => speakText(text, idx));
+      return;
+    }
     speakText(text, idx);
   }, [speakText]);
 
