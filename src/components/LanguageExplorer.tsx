@@ -198,7 +198,8 @@ export default function LanguageExplorer({
   };
 
   const updateCoreWord = async (originalId: string, word: string, translation: string, phonetic: string, audioBlob?: Blob) => {
-    if (!currentUser || !isAdmin) return;
+    if (!currentUser) throw new Error("Not signed in. Please log in again before saving.");
+    if (!isAdmin) throw new Error("You do not have admin permissions to edit core vocabulary.");
     try {
       const updateData: any = { word, translation, phonetic, updatedAt: serverTimestamp() };
       if (audioBlob) {

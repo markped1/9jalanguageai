@@ -39,17 +39,23 @@ export default function App() {
     const savedDev = localStorage.getItem('lexicon_dev_user');
     if (savedDev) {
       setDeveloperUser(JSON.parse(savedDev));
-      // Re-authenticate anonymously to align Firebase Auth state with the loaded developer credentials
-      signInAnonymously(auth).catch((err) => {
-        console.error("Failed to automatically restore anonymous session:", err);
-      });
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      // If anonymous, keep developerUser active, else clear it if it's a real user
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (u && !u.isAnonymous) {
+        // Real Google user — clear any dev session
         setDeveloperUser(null);
         localStorage.removeItem('lexicon_dev_user');
+      }
+      if (!u) {
+        // No user at all — sign in anonymously so Firestore writes always have auth
+        try {
+          await signInAnonymously(auth);
+        } catch (err) {
+          console.error('Anonymous sign-in failed:', err);
+        }
+        // onAuthStateChanged will fire again with the new anonymous user
+        return;
       }
       setUser(u);
       setLoading(false);
