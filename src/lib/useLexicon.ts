@@ -7,8 +7,7 @@
  */
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { db, auth } from './firebase';
+import { db } from './firebase';
 import { LINGUISTIC_REPOSITORY } from './repository';
 import { customAudioCache } from './voice';
 
@@ -47,95 +46,92 @@ export function useLexicon() {
 
   useEffect(() => {
     let active = true;
-    let unsubCore: () => void = () => {};
-    let unsubCommunity: () => void = () => {};
 
-    const initializeLexicon = () => {
-      const baseMap = new Map<string, LexiconEntry>();
-      for (const cat of LINGUISTIC_REPOSITORY) {
-        for (const item of cat.items) {
-          baseMap.set(item.term, {
-            id: item.term,
-            edoWord: item.term,
-            english: item.translation,
-            phonetic: item.phonetic,
-            category: cat.category,
-            context: item.context,
-            isSeeded: true,
-          });
+    // Single persistent baseMap — never recreated, only updated
+    const baseMap = new Map<string, LexiconEntry>();
+
+    // Seed static repository into baseMap first
+    for (const cat of LINGUISTIC_REPOSITORY) {
+      for (const item of cat.items) {
+        baseMap.set(item.term, {
+          id: item.term,
+          edoWord: item.term,
+          english: item.translation,
+          phonetic: item.phonetic,
+          category: cat.category,
+          context: item.context,
+          isSeeded: true,
+        });
+      }
+    }
+
+    // Subscribe to coreVocabAudio — fires immediately with current data
+    const unsubCore = onSnapshot(collection(db, 'coreVocabAudio'), (snap) => {
+      if (!active) return;
+      snap.docs.forEach(d => {
+        const data = d.data();
+        const staticId = d.id;
+        const existing = baseMap.get(staticId);
+        const edoWord = data.translation || existing?.edoWord || staticId;
+        const audioUrl = data.audioUrl || existing?.audioUrl;
+
+        // Always update the global audio cache — this is the key line
+        if (audioUrl && edoWord) {
+          customAudioCache[edoWord.toLowerCase().trim()] = audioUrl;
+          // Also cache by English word for broader matching
+          if (data.word) {
+            customAudioCache[data.word.toLowerCase().trim()] = audioUrl;
+          }
         }
-      }
 
-      unsubCore = onSnapshot(collection(db, 'coreVocabAudio'), (snap) => {
-        if (!active) return;
-        snap.docs.forEach(d => {
-          const data = d.data();
-          const staticId = d.id; 
-          const existing = baseMap.get(staticId);
-          const edoWord = data.translation || existing?.edoWord || staticId;
-          const audioUrl = data.audioUrl || existing?.audioUrl;
-
-          // Cache the developer audio override so playEdoSpeech plays it site-wide
-          if (audioUrl && edoWord) {
-            customAudioCache[edoWord.toLowerCase().trim()] = audioUrl;
-          }
-
-          baseMap.set(staticId, {
-            id: staticId,
-            edoWord,
-            english: data.word || existing?.english || '',
-            phonetic: data.phonetic || existing?.phonetic || '',
-            category: data.category || existing?.category || 'General',
-            audioUrl,
-            context: data.context || existing?.context,
-            isSeeded: true,
-          });
+        baseMap.set(staticId, {
+          id: staticId,
+          edoWord,
+          english: data.word || existing?.english || '',
+          phonetic: data.phonetic || existing?.phonetic || '',
+          category: data.category || existing?.category || 'General',
+          audioUrl,
+          context: data.context || existing?.context,
+          isSeeded: true,
         });
-        rebuild(baseMap);
-      }, (error) => {
-        console.error('Error fetching coreVocabAudio:', error);
-        if (active) rebuild(baseMap);
       });
-
-      unsubCommunity = onSnapshot(collection(db, 'communityVocab'), (snap) => {
-        if (!active) return;
-        snap.docs.forEach(d => {
-          const data = d.data();
-          if (!data.translation) return;
-          const edoWord = data.translation;
-          const audioUrl = data.audioUrl;
-
-          // Cache the community audio override so playEdoSpeech plays it site-wide
-          if (audioUrl) {
-            customAudioCache[edoWord.toLowerCase().trim()] = audioUrl;
-          }
-
-          baseMap.set(data.translation, {
-            id: data.translation,
-            edoWord,
-            english: data.word || '',
-            phonetic: data.phonetic || '',
-            category: data.category || 'Community',
-            audioUrl,
-            isSeeded: false,
-          });
-        });
-        rebuild(baseMap);
-      }, (error) => {
-        console.error('Error fetching communityVocab:', error);
-        if (active) rebuild(baseMap);
-      });
-    };
-
-    const authUnsub = onAuthStateChanged(auth, () => {
-      if (active) {
-        unsubCore();
-        unsubCommunity();
-        initializeLexicon();
-      }
+      rebuild(baseMap);
+    }, (error) => {
+      console.error('Error fetching coreVocabAudio:', error);
+      if (active) rebuild(baseMap);
     });
 
-    initializeLexicon();
+    // Subscribe to communityVocab
+    const unsubCommunity = onSnapshot(collection(db, 'communityVocab'), (snap) => {
+      if (!active) return;
+      snap.docs.forEach(d => {
+        const data = d.data();
+        if (!data.translation) return;
+        const edoWord = data.translation;
+        const audioUrl = data.audioUrl;
+
+        if (audioUrl) {
+          customAudioCache[edoWord.toLowerCase().trim()] = audioUrl;
+          if (data.word) {
+            customAudioCache[data.word.toLowerCase().trim()] = audioUrl;
+          }
+        }
+
+        baseMap.set(data.translation, {
+          id: data.translation,
+          edoWord,
+          english: data.word || '',
+          phonetic: data.phonetic || '',
+          category: data.category || 'Community',
+          audioUrl,
+          isSeeded: false,
+        });
+      });
+      rebuild(baseMap);
+    }, (error) => {
+      console.error('Error fetching communityVocab:', error);
+      if (active) rebuild(baseMap);
+    });
 
     function rebuild(map: Map<string, LexiconEntry>) {
       const entries = Array.from(map.values());
@@ -168,9 +164,8 @@ export function useLexicon() {
       active = false;
       unsubCore();
       unsubCommunity();
-      authUnsub();
     };
-  }, []);
+  }, []); // Empty deps — subscribe once, never re-initialize
 
   // Subscribe to admin training data
   useEffect(() => {
