@@ -11,7 +11,9 @@ import { User as FirebaseUser } from 'firebase/auth';
 import { getEdoChat, ChatAttachment, transcribeWithWhisper } from '../lib/ai';
 import { useLexicon, seedLexiconToFirestore } from '../lib/useLexicon';
 import { ChatMessage } from '../types';
-import { recordAudioBlob, playEdoSpeech, customAudioCache } from '../lib/voice';
+import { recordAudioBlob, customAudioCache } from '../lib/voice';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface EdoAssistantProps {
   user: FirebaseUser;
@@ -130,7 +132,7 @@ export default function EdoAssistant({ user, isAdmin }: EdoAssistantProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [autoSpeak, setAutoSpeak] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
@@ -228,15 +230,14 @@ export default function EdoAssistant({ user, isAdmin }: EdoAssistantProps) {
     window.speechSynthesis.speak(utterance);
   };
 
-  const speakMessage = useCallback((text: string, idx: number) => {
-    // Extract the first Edo word/phrase from the response
-    // Try exact cache match first, then fall back to full TTS
+  const speakMessage = useCallback(async (text: string, idx: number) => {
+    // Extract candidate Edo words from the response text
     const firstLine = text.split('\n')[0].trim();
-    const normalized = firstLine.toLowerCase().replace(/[*#_`]/g, '').trim();
+    const normalized = firstLine.toLowerCase().replace(/[*#_`\[\]()]/g, '').trim();
 
-    // Check cache for exact match or partial match
+    // 1. Check in-memory cache first (populated by useLexicon)
     const cacheKey = Object.keys(customAudioCache).find(k =>
-      normalized.startsWith(k) || normalized.includes(k)
+      normalized === k || normalized.startsWith(k) || normalized.includes(k)
     );
 
     if (cacheKey && customAudioCache[cacheKey]) {
@@ -249,6 +250,29 @@ export default function EdoAssistant({ user, isAdmin }: EdoAssistantProps) {
       audio.play().catch(() => speakText(text, idx));
       return;
     }
+
+    // 2. Cache miss — query Firestore directly for any Edo word in the response
+    try {
+      const snap = await getDocs(collection(db, 'coreVocabAudio'));
+      for (const d of snap.docs) {
+        const data = d.data();
+        const edoWord = (data.translation || d.id || '').toLowerCase().trim();
+        if (edoWord && data.audioUrl && normalized.includes(edoWord)) {
+          // Populate cache for future use
+          customAudioCache[edoWord] = data.audioUrl;
+          setIsSpeaking(true);
+          setSpeakingIdx(idx);
+          const audio = new Audio(data.audioUrl);
+          currentAudioRef.current = audio;
+          audio.onended = () => { setIsSpeaking(false); setSpeakingIdx(null); };
+          audio.onerror = () => { speakText(text, idx); };
+          audio.play().catch(() => speakText(text, idx));
+          return;
+        }
+      }
+    } catch (_) { /* fall through to TTS */ }
+
+    // 3. No cached audio found — use browser TTS
     speakText(text, idx);
   }, [speakText]);
 
