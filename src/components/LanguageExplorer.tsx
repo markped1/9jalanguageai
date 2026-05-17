@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot, addDoc, deleteDoc, doc, setDoc, serverTimestamp, orderBy, Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User } from 'firebase/auth';
 import { db, auth, uploadAudio } from '../lib/firebase';
 import { Languages, Book, Scroll, Map, Volume2, Mic, CheckCircle2, ChevronRight, Share2, MessageSquare, Play, User as UserIcon, Users, XCircle, Loader2, Square, Edit2, Check, X, LogIn, LogOut, Sparkles, Database, Upload, FileAudio, Trash2, Plus } from 'lucide-react';
@@ -192,42 +192,30 @@ export default function LanguageExplorer({
 
   const updateWord = async (id: string, word: string, translation: string, phonetic: string, isGlobal: boolean = false, audioBlob?: Blob) => {
     try {
-      const effectiveUser = currentUser || (await ensureSignedIn());
-      if (!effectiveUser) return;
-      const path = isGlobal ? `communityVocab/${id}` : `users/${effectiveUser.uid}/personalVocab/${id}`;
-      console.log('LanguageExplorer.updateWord: about to write', { path, user: { uid: effectiveUser.uid, isAnonymous: effectiveUser.isAnonymous, email: effectiveUser.email } });
-
-    try {
-      const docRef = doc(db, path);
+      const path = isGlobal ? `communityVocab/${id}` : `users/${currentUser?.uid}/personalVocab/${id}`;
       const updateData: any = { word, translation, phonetic, updatedAt: serverTimestamp() };
 
       if (audioBlob) {
         try {
           const audioUrl = await uploadAudio(`vocab-audio/${Date.now()}-${translation}.webm`, audioBlob);
           updateData.audioUrl = audioUrl;
-          // Immediately update the in-memory cache so playback works site-wide without waiting for Firestore roundtrip
           customAudioCache[translation.toLowerCase().trim()] = audioUrl;
         } catch (audioErr) {
           console.warn('Audio upload failed, saving text only:', audioErr);
         }
       }
 
-      const { setDoc } = await import('firebase/firestore');
-      await setDoc(docRef, updateData, { merge: true });
+      await setDoc(doc(db, path), updateData, { merge: true });
     } catch (error) {
-      console.error('LanguageExplorer.updateWord failed', error);
-      handleFirestoreError(error, OperationType.UPDATE, path);
-    }
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, null);
+      console.error('updateWord failed:', error);
+      throw error;
     }
   };
 
   const updateCoreWord = async (originalId: string, word: string, translation: string, phonetic: string, audioBlob?: Blob) => {
-    if (!isAdmin) throw new Error("You do not have admin permissions to edit core vocabulary.");
-    await ensureSignedIn();
     try {
       const updateData: any = { word, translation, phonetic, updatedAt: serverTimestamp() };
+
       if (audioBlob) {
         try {
           const audioUrl = await uploadAudio(`vocab-audio/core-${Date.now()}-${originalId}.webm`, audioBlob);
@@ -238,23 +226,16 @@ export default function LanguageExplorer({
           console.warn('Audio upload failed, saving text only:', audioErr);
         }
       }
-      const { setDoc: firestoreSetDoc, doc: firestoreDoc, deleteDoc: firestoreDeleteDoc } = await import('firebase/firestore');
 
-      // If the Edo word (translation) changed, we need to move the doc to the new ID
       if (originalId !== translation) {
-        // Write to new doc ID
-        const newDocRef = firestoreDoc(db, 'coreVocabAudio', translation);
-        await firestoreSetDoc(newDocRef, updateData, { merge: true });
-        // Delete old doc so it doesn't show as a duplicate
-        const oldDocRef = firestoreDoc(db, 'coreVocabAudio', originalId);
-        await firestoreDeleteDoc(oldDocRef);
+        // Edo word changed — write to new doc ID, delete old one
+        await setDoc(doc(db, 'coreVocabAudio', translation), updateData, { merge: true });
+        await deleteDoc(doc(db, 'coreVocabAudio', originalId));
       } else {
-        // Same ID — just update in place
-        const docRef = firestoreDoc(db, 'coreVocabAudio', originalId);
-        await firestoreSetDoc(docRef, updateData, { merge: true });
+        await setDoc(doc(db, 'coreVocabAudio', originalId), updateData, { merge: true });
       }
     } catch (error) {
-      console.error('Failed to update core word', error);
+      console.error('updateCoreWord failed:', error);
       throw error;
     }
   };
