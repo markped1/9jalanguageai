@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isMasterAdmin() {
+      return isSignedIn() && request.auth.token.email == 'mckpedersen@gmail.com';
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Personal Vocabulary Rules
+    match /users/{userId}/personalVocab/{vocabId} {
+      function isValidVocab(data) {
+        return data.word is string && data.word.size() > 0 && data.word.size() <= 200 &&
+               data.translation is string && data.translation.size() > 0 && data.translation.size() <= 200 &&
+               data.phonetic is string && data.phonetic.size() <= 200 &&
+               data.userId == userId &&
+               data.createdAt is timestamp;
+      }
+
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      
+      allow create: if isOwner(userId) && 
+                      isValidVocab(incoming()) && 
+                      incoming().createdAt == request.time;
+      
+      allow update: if isOwner(userId) && 
+                      isValidVocab(incoming()) &&
+                      incoming().word == resource.data.word && // Immutable meaning
+                      incoming().createdAt == resource.data.createdAt &&
+                      incoming().userId == resource.data.userId;
+
+      allow delete: if isOwner(userId);
+    }
+
+    // Languages Repository Rules
+    match /languages/{languageId} {
+      function isValidLanguage(data) {
+        return data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+               data.location is string && data.location.size() > 0 && data.location.size() <= 200 &&
+               data.isRegional is bool &&
+               data.lastSearchReport is string &&
+               data.createdAt is timestamp;
+      }
+
+      allow read: if true; // Publicly readable
+      
+      allow create: if isSignedIn() && 
+                      isValidLanguage(incoming()) && 
+                      incoming().createdAt == request.time &&
+                      incoming().discoveredBy == request.auth.uid;
+      
+      allow update, delete: if false; // For now, languages are append-only or admin managed
+    }
+
+    // Developer Accounts Rules
+    match /lexiconDevelopers/{devId} {
+      allow read: if true; // Publicly readable for login verification
+      allow write: if isMasterAdmin(); // Only Master Admin can manage devs
+    }
+
+    // Core Vocabulary Audio Rules
+    match /coreVocabAudio/{audioId} {
+      allow read: if true; // Publicly readable
+      allow write: if isSignedIn(); // Any signed-in user (admin or developer) can write
+    }
+
+    // Community Vocabulary Rules
+    match /communityVocab/{vocabId} {
+      allow read: if true; // Publicly readable
+      allow write: if isSignedIn(); // Any signed-in user can add/edit community submissions
+    }
+
+    // AI Training Studio Rules
+    match /aiTraining/{entryId} {
+      allow read: if true; // Publicly readable
+      allow write: if isSignedIn(); // Any signed-in user (admin or developer) can contribute
+    }
+  }
+}
