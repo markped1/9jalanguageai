@@ -48,14 +48,16 @@ export default function App() {
         localStorage.removeItem('lexicon_dev_user');
       }
       if (!u) {
-        // No user at all — sign in anonymously so Firestore writes always have auth
+        // No user — try anonymous sign-in so Firestore writes have auth.
+        // If it fails or is disabled, still unblock the loading screen.
         try {
           await signInAnonymously(auth);
+          // onAuthStateChanged will fire again with the anonymous user — return here
+          return;
         } catch (err) {
-          console.error('Anonymous sign-in failed:', err);
+          console.warn('Anonymous sign-in failed, continuing as unauthenticated:', err);
+          // Fall through — set loading false so the login screen shows
         }
-        // onAuthStateChanged will fire again with the new anonymous user
-        return;
       }
       setUser(u);
       setLoading(false);
