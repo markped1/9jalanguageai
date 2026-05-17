@@ -940,74 +940,101 @@ function VocabularyItem({
           </div>
 
           {isEditing ? (
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <input 
-                  disabled={isSaving} 
-                  value={editWord} 
-                  onChange={e => setEditWord(e.target.value)} 
-                  className="text-xs border border-[#E5E5E5] rounded-lg px-2 py-1.5 outline-none focus:border-[#5A5A40] w-28 disabled:opacity-50" 
-                  placeholder="English" 
-                />
-                <input 
-                  disabled={isSaving} 
-                  value={editTranslation} 
-                  onChange={e => setEditTranslation(e.target.value)} 
-                  className="text-sm font-serif border border-[#E5E5E5] rounded-lg px-2 py-1.5 outline-none focus:border-[#5A5A40] w-32 disabled:opacity-50" 
-                  placeholder="Edo word" 
-                />
-                <input 
-                  disabled={isSaving} 
-                  value={editValue} 
-                  onChange={e => setEditValue(e.target.value)} 
-                  className="text-[10px] italic border border-[#E5E5E5] rounded-lg px-2 py-1.5 outline-none focus:border-[#5A5A40] w-32 text-[#5A5A40] disabled:opacity-50" 
-                  placeholder="Phonetic" 
+            <div className="mt-3 p-4 bg-[#F8F8F5] rounded-2xl border border-[#D5D5C5] space-y-4">
+              {/* Header */}
+              <div className="flex items-center gap-2 pb-2 border-b border-[#E5E5E5]">
+                <Edit2 size={12} className="text-[#5A5A40]" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#5A5A40]">
+                  {isAdmin ? 'Admin Editor — All fields are fully editable' : 'Edit Entry'}
+                </span>
+              </div>
+
+              {/* English meaning */}
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-1">English Meaning</label>
+                <input
+                  disabled={isSaving}
+                  value={editWord}
+                  onChange={e => setEditWord(e.target.value)}
+                  className="w-full text-sm border border-[#E5E5E5] rounded-xl px-3 py-2 outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all"
+                  placeholder="e.g. Good morning"
                 />
               </div>
 
+              {/* Edo word */}
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-1">Edo Word / Phrase <span className="text-[#5A5A40]">(replaces existing)</span></label>
+                <input
+                  disabled={isSaving}
+                  value={editTranslation}
+                  onChange={e => setEditTranslation(e.target.value)}
+                  className="w-full text-lg font-serif border border-[#5A5A40]/30 rounded-xl px-3 py-2 outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all"
+                  placeholder="e.g. Obowie"
+                />
+              </div>
+
+              {/* Phonetic */}
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-1">Phonetic Pronunciation Guide <span className="text-[#5A5A40]">(replaces existing)</span></label>
+                <input
+                  disabled={isSaving}
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  className="w-full text-sm italic border border-[#E5E5E5] rounded-xl px-3 py-2 outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all text-[#5A5A40]"
+                  placeholder="e.g. /Oh-bo-wee-eh/"
+                />
+              </div>
+
+              {/* Admin audio panel */}
               {isAdmin && (
-                <div className="flex items-center gap-2 flex-wrap p-3 bg-[#F5F5F0] rounded-2xl border border-[#E5E5E5]">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-[#5A5A40] w-full mb-1">Admin: Record Pronunciation</span>
-                  <button type="button" onClick={isRecording ? stopAdminRecording : startAdminRecording}
-                    disabled={isSaving}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-[#5A5A40] text-white hover:bg-[#4A4A30]'} disabled:opacity-50`}>
-                    {isRecording ? <Square size={10} fill="currentColor" /> : <Mic size={10} />}
-                    {isRecording ? `Stop (${recordingSeconds}s)` : 'Record'}
-                  </button>
-                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="audio/*" className="hidden" />
-                  <button type="button" onClick={() => fileInputRef.current?.click()}
-                    disabled={isSaving}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white text-[#5A5A40] border border-[#E5E5E5] hover:border-[#5A5A40] transition-all disabled:opacity-50">
-                    <Upload size={10} /> Upload
-                  </button>
-                  {audioPreviewUrl && (
-                    <>
-                      <button type="button" onClick={() => new Audio(audioPreviewUrl).play()}
-                        disabled={isSaving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all disabled:opacity-50">
-                        <Play size={10} fill="currentColor" /> Preview
-                      </button>
-                      <button type="button" onClick={() => { setAudioBlob(null); setAudioPreviewUrl(null); }} 
-                        disabled={isSaving}
-                        className="p-1.5 text-[#A1A1A1] hover:text-red-500 transition-colors disabled:opacity-50" title="Clear audio">
-                        <Trash2 size={12} />
-                      </button>
-                    </>
-                  )}
-                  {isRecording && <span className="text-[9px] text-red-500 font-bold animate-pulse uppercase w-full">Recording... press Stop when done</span>}
-                  {audioBlob && !isRecording && <span className="text-[9px] text-green-600 font-bold uppercase">✓ Audio ready — saves on Update</span>}
+                <div className="p-3 bg-white rounded-xl border border-[#E5E5E5] space-y-2">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-[#5A5A40] block">
+                    🎙 Record Audio Pronunciation <span className="text-[#A1A1A1] font-normal">(replaces existing audio)</span>
+                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button type="button" onClick={isRecording ? stopAdminRecording : startAdminRecording}
+                      disabled={isSaving}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-[#5A5A40] text-white hover:bg-[#4A4A30]'} disabled:opacity-50`}>
+                      {isRecording ? <Square size={10} fill="currentColor" /> : <Mic size={10} />}
+                      {isRecording ? `Stop (${recordingSeconds}s)` : 'Record'}
+                    </button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="audio/*" className="hidden" />
+                    <button type="button" onClick={() => fileInputRef.current?.click()}
+                      disabled={isSaving}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#F5F5F0] text-[#5A5A40] border border-[#E5E5E5] hover:border-[#5A5A40] transition-all disabled:opacity-50">
+                      <Upload size={10} /> Upload File
+                    </button>
+                    {audioPreviewUrl && (
+                      <>
+                        <button type="button" onClick={() => new Audio(audioPreviewUrl).play()}
+                          disabled={isSaving}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all disabled:opacity-50">
+                          <Play size={10} fill="currentColor" /> Preview
+                        </button>
+                        <button type="button" onClick={() => { setAudioBlob(null); setAudioPreviewUrl(null); }}
+                          disabled={isSaving}
+                          className="p-1.5 text-[#A1A1A1] hover:text-red-500 transition-colors disabled:opacity-50" title="Clear audio">
+                          <Trash2 size={12} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {isRecording && <p className="text-[9px] text-red-500 font-bold animate-pulse uppercase">● Recording... speak clearly, then press Stop</p>}
+                  {audioBlob && !isRecording && <p className="text-[9px] text-green-600 font-bold uppercase">✓ New audio ready — will replace existing audio on Update</p>}
+                  {!audioBlob && audioPreviewUrl && <p className="text-[9px] text-blue-500 font-bold uppercase">ℹ Existing audio saved — record new audio above to replace it</p>}
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <button 
-                  onClick={saveCorrection} 
+              {/* Save / Cancel */}
+              <div className="flex gap-2 pt-1 border-t border-[#E5E5E5]">
+                <button
+                  onClick={saveCorrection}
                   disabled={isSaving}
-                  className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-white bg-[#1A1A1A] px-3 py-1.5 rounded-full hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[#1A1A1A] px-4 py-2 rounded-full hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 justify-center"
                 >
-                  <Check size={10} /> {isSaving ? 'Saving...' : (onUpdate ? 'Update' : 'Apply')}
+                  <Check size={11} /> {isSaving ? 'Saving changes...' : (onUpdate ? '✓ Update & Replace' : 'Apply Changes')}
                 </button>
-                <button onClick={() => { setIsEditing(false); setAudioBlob(null); setAudioPreviewUrl(initialAudioUrl ?? null); }} className="text-[9px] font-bold uppercase tracking-widest text-[#A1A1A1] px-3 py-1.5 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all">
+                <button onClick={() => { setIsEditing(false); setAudioBlob(null); setAudioPreviewUrl(initialAudioUrl ?? null); }} className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1A1] px-4 py-2 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all">
                   Cancel
                 </button>
               </div>
