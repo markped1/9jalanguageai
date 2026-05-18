@@ -10,6 +10,8 @@ import AdminRepository from './components/AdminRepository';
 import EdoAssistant from './components/EdoAssistant';
 import AdminTraining from './components/AdminTraining';
 import TeamManagement from './components/TeamManagement';
+import LanguagesMenu from './components/LanguagesMenu';
+import GeneralAssistant from './components/GeneralAssistant';
 
 const ADMIN_EMAIL = 'mckpedersen@gmail.com';
 
@@ -17,8 +19,8 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [developerUser, setDeveloperUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'assistant' | 'discover' | 'explorer' | 'repository' | 'training' | 'team'>(() => {
-    return (localStorage.getItem('active_tab') as any) || 'assistant';
+  const [activeTab, setActiveTab] = useState<'home' | 'languages' | 'discover' | 'explorer' | 'repository' | 'training' | 'team'>(() => {
+    return (localStorage.getItem('active_tab') as any) || 'home';
   });
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(() => {
     return localStorage.getItem('selected_language') || null;
@@ -237,12 +239,20 @@ export default function App() {
           </div>
 
           <div className="flex-1 flex flex-col gap-2 w-full px-2">
-            {/* Assistant — always visible */}
+            {/* Home - always visible */}
             <NavItem
-              icon={<MessageSquare size={20} />}
-              active={activeTab === 'assistant'}
-              onClick={() => setActiveTab('assistant')}
-              label="Ọmwan AI"
+              icon={<Globe size={20} />}
+              active={activeTab === 'home'}
+              onClick={() => setActiveTab('home')}
+              label="Home"
+            />
+
+            {/* Languages menu - always visible */}
+            <NavItem
+              icon={<Languages size={20} />}
+              active={activeTab === 'languages'}
+              onClick={() => setActiveTab('languages')}
+              label="Languages"
             />
 
             {/* Admin-only sections */}
@@ -314,15 +324,32 @@ export default function App() {
         {/* Main content */}
         <main className="pl-16 flex-1 min-h-screen flex flex-col bg-white">
           <AnimatePresence mode="wait">
-            {activeTab === 'assistant' && (
+            {activeTab === 'home' && (
               <motion.div
-                key="assistant"
+                key="home"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col h-screen"
+                className="flex-1"
               >
-                <EdoAssistant user={user} isAdmin={isAdmin} />
+                <GeneralAssistant user={user} isAdmin={isAdmin} />
+              </motion.div>
+            )}
+
+            {activeTab === 'languages' && (
+              <motion.div
+                key="languages"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 overflow-y-auto"
+              >
+                <LanguagesMenu
+                  onSelectLanguage={(langId, langName) => {
+                    setSelectedLanguage(langName);
+                    setActiveTab('explorer');
+                  }}
+                />
               </motion.div>
             )}
 
