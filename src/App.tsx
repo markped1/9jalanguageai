@@ -101,8 +101,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0A0F0A] via-[#0F0F0F] to-[#0A120A] flex items-center justify-center relative overflow-hidden">
-        <div className="fixed inset-0 opacity-[0.03]">
+      <div className="min-h-screen bg-white flex items-center justify-center relative overflow-hidden">
+        <div className="fixed inset-0 opacity-[0.02]">
           <div className="absolute inset-0" style={{
             backgroundImage: 'linear-gradient(#008751 1px, transparent 1px), linear-gradient(90deg, #008751 1px, transparent 1px)',
             backgroundSize: '50px 50px'
@@ -113,7 +113,7 @@ export default function App() {
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
           className="relative z-10"
         >
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#008751] to-[#00A862] flex items-center justify-center shadow-2xl shadow-[#008751]/30">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#008751] to-[#00A862] flex items-center justify-center shadow-2xl">
             <Languages className="w-8 h-8 text-white" />
           </div>
         </motion.div>
@@ -123,18 +123,14 @@ export default function App() {
 
   if (!user && !developerUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0A0F0A] via-[#0F0F0F] to-[#0A120A] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-        {/* Animated background */}
-        <div className="fixed inset-0 opacity-[0.03]">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+        {/* Subtle background */}
+        <div className="fixed inset-0 opacity-[0.02]">
           <div className="absolute inset-0" style={{
             backgroundImage: 'linear-gradient(#008751 1px, transparent 1px), linear-gradient(90deg, #008751 1px, transparent 1px)',
             backgroundSize: '50px 50px'
           }} />
         </div>
-        
-        {/* Glowing orbs */}
-        <div className="fixed top-20 left-20 w-96 h-96 bg-[#008751]/10 rounded-full blur-3xl animate-pulse" />
-        <div className="fixed bottom-20 right-20 w-96 h-96 bg-[#00A862]/10 rounded-full blur-3xl animate-pulse delay-1000" />
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -143,16 +139,16 @@ export default function App() {
         >
           {/* Logo */}
           <div className="mb-8 flex justify-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#008751] to-[#00A862] rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-[#008751]/30 relative">
+            <div className="w-20 h-20 bg-gradient-to-br from-[#008751] to-[#00A862] rounded-3xl flex items-center justify-center text-white shadow-2xl relative">
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer rounded-3xl" />
               <Globe className="w-10 h-10 relative z-10" />
             </div>
           </div>
-          <h1 className="text-5xl font-serif text-white mb-3 tracking-tight leading-tight">
+          <h1 className="text-5xl font-serif text-[#008751] mb-3 tracking-tight leading-tight">
             9jai <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-[#008751] to-[#00A862]">AI</span>
           </h1>
           <p className="text-sm text-[#008751] mb-2 font-bold uppercase tracking-widest">Edo Language Assistant</p>
-          <p className="text-[#6A6A6A] mb-10 leading-relaxed text-sm max-w-sm mx-auto">
+          <p className="text-[#008751]/60 mb-10 leading-relaxed text-sm max-w-sm mx-auto">
             Your intelligent guide to the Edo (Bini) language and culture. Ask questions, learn phrases, translate, and explore heritage.
           </p>
 
@@ -168,45 +164,45 @@ export default function App() {
               </button>
               <button
                 onClick={() => setShowDeveloperLogin(true)}
-                className="w-full py-4 bg-transparent border border-[#008751]/30 text-white rounded-2xl font-medium hover:bg-[#008751]/10 hover:border-[#008751]/50 transition-all flex items-center justify-center gap-3 text-sm"
+                className="w-full py-4 bg-white border-2 border-[#008751] text-[#008751] rounded-2xl font-medium hover:bg-[#008751]/5 transition-all flex items-center justify-center gap-3 text-sm"
               >
                 <Users size={18} />
                 Developer Login
               </button>
-              <p className="mt-4 text-[#3A3A3A] text-xs">Free to use · No credit card required</p>
+              <p className="mt-4 text-[#008751]/40 text-xs">Free to use · No credit card required</p>
             </div>
           ) : (
-            <form onSubmit={handleDeveloperLogin} className="bg-[#0F1A0F]/50 backdrop-blur-xl p-6 rounded-3xl border border-[#008751]/20 text-left shadow-2xl">
-              <h3 className="text-xl font-serif mb-4 text-white">Lexicon Developer Portal</h3>
+            <form onSubmit={handleDeveloperLogin} className="bg-white p-6 rounded-3xl border-2 border-[#008751]/20 text-left shadow-xl">
+              <h3 className="text-xl font-serif mb-4 text-[#008751]">Lexicon Developer Portal</h3>
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="block text-xs font-bold text-[#5A5A5A] mb-1 uppercase tracking-widest">Username</label>
+                  <label className="block text-xs font-bold text-[#008751]/60 mb-1 uppercase tracking-widest">Username</label>
                   <div className="relative">
-                    <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5A5A]" />
+                    <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#008751]/60" />
                     <input
                       type="text"
                       value={devUsername}
                       onChange={(e) => setDevUsername(e.target.value)}
-                      className="w-full bg-[#0A0F0A] border border-[#008751]/30 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/20 transition-all"
+                      className="w-full bg-white border-2 border-[#008751]/20 rounded-xl py-3 pl-10 pr-4 text-[#008751] focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/20 transition-all"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5A5A5A] mb-1 uppercase tracking-widest">PIN</label>
+                  <label className="block text-xs font-bold text-[#008751]/60 mb-1 uppercase tracking-widest">PIN</label>
                   <div className="relative">
-                    <Key size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5A5A]" />
+                    <Key size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#008751]/60" />
                     <input
                       type="password"
                       value={devPin}
                       onChange={(e) => setDevPin(e.target.value)}
-                      className="w-full bg-[#0A0F0A] border border-[#008751]/30 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/20 transition-all"
+                      className="w-full bg-white border-2 border-[#008751]/20 rounded-xl py-3 pl-10 pr-4 text-[#008751] focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/20 transition-all"
                     />
                   </div>
                 </div>
                 {devLoginError && <p className="text-red-500 text-xs font-bold">{devLoginError}</p>}
               </div>
               <div className="flex gap-3">
-                <button type="button" onClick={() => setShowDeveloperLogin(false)} className="flex-1 py-3 bg-[#0A0F0A] text-white rounded-xl text-sm font-bold hover:bg-black transition-colors border border-[#008751]/20">
+                <button type="button" onClick={() => setShowDeveloperLogin(false)} className="flex-1 py-3 bg-white text-[#008751] rounded-xl text-sm font-bold hover:bg-[#008751]/5 transition-colors border-2 border-[#008751]/20">
                   Cancel
                 </button>
                 <button type="submit" className="flex-1 py-3 bg-gradient-to-r from-[#008751] to-[#00A862] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-[#008751]/30 transition-all">
@@ -221,9 +217,9 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A0F0A] via-[#0F0F0F] to-[#0A120A] text-white font-sans flex flex-col">
-      {/* Animated background grid */}
-      <div className="fixed inset-0 opacity-[0.03] pointer-events-none">
+    <div className="min-h-screen bg-white text-[#008751] font-sans flex flex-col">
+      {/* Subtle background pattern */}
+      <div className="fixed inset-0 opacity-[0.02] pointer-events-none">
         <div className="absolute inset-0" style={{
           backgroundImage: 'linear-gradient(#008751 1px, transparent 1px), linear-gradient(90deg, #008751 1px, transparent 1px)',
           backgroundSize: '50px 50px'
@@ -232,10 +228,10 @@ export default function App() {
 
       <div className="flex flex-1 relative z-10">
         {/* Sidebar */}
-        <nav className="fixed left-0 top-0 h-screen w-16 flex flex-col items-center py-6 bg-gradient-to-b from-[#0F1A0F] to-[#0A0F0A] border-r border-[#008751]/20 backdrop-blur-xl z-50">
+        <nav className="fixed left-0 top-0 h-screen w-16 flex flex-col items-center py-6 bg-gradient-to-b from-[#008751] to-[#00A862] shadow-xl z-50">
           {/* Logo */}
           <div className="mb-8">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#008751] to-[#00A862] rounded-xl flex items-center justify-center shadow-lg shadow-[#008751]/20">
+            <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
               <Globe className="w-5 h-5 text-white" />
             </div>
           </div>
@@ -252,7 +248,7 @@ export default function App() {
             {/* Admin-only sections */}
             {isMasterAdmin && (
               <>
-                <div className="h-px bg-[#008751]/20 my-2 mx-2" />
+                <div className="h-px bg-white/20 my-2 mx-2" />
                 <NavItem
                   icon={<BookOpen size={20} />}
                   active={activeTab === 'discover'}
@@ -294,20 +290,20 @@ export default function App() {
           {/* User avatar + sign out */}
           <div className="flex flex-col items-center gap-3">
             {developerUser ? (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#008751] to-[#00A862] text-white flex items-center justify-center text-xs font-bold border border-[#008751]/30 shadow-lg" title={developerUser.username}>
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center text-xs font-bold shadow-lg" title={developerUser.username}>
                 {developerUser.username.substring(0, 2).toUpperCase()}
               </div>
             ) : user?.photoURL ? (
               <img
                 src={user.photoURL}
                 alt=""
-                className="w-8 h-8 rounded-full border-2 border-[#008751]/30"
+                className="w-8 h-8 rounded-full border-2 border-white/30"
                 referrerPolicy="no-referrer"
               />
             ) : null}
             <button
               onClick={handleSignOut}
-              className="p-2 text-[#5A5A5A] hover:text-white transition-colors rounded-xl hover:bg-[#008751]/10"
+              className="p-2 text-white/70 hover:text-white transition-colors rounded-xl hover:bg-white/10"
               title="Sign out"
             >
               <LogOut size={18} />
@@ -316,7 +312,7 @@ export default function App() {
         </nav>
 
         {/* Main content */}
-        <main className="pl-16 flex-1 min-h-screen flex flex-col">
+        <main className="pl-16 flex-1 min-h-screen flex flex-col bg-white">
           <AnimatePresence mode="wait">
             {activeTab === 'assistant' && (
               <motion.div
@@ -404,9 +400,9 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-[#008751]/20 bg-gradient-to-r from-[#0A0F0A] via-[#0F1A0F] to-[#0A0F0A] backdrop-blur-xl">
+      <footer className="relative z-10 border-t border-[#008751]/20 bg-white">
         <div className="px-6 py-4 flex items-center justify-center">
-          <p className="text-[10px] text-[#5A5A5A] font-medium tracking-wider">
+          <p className="text-[10px] text-[#008751]/60 font-medium tracking-wider">
             Designed by <span className="text-[#008751] font-bold">Thompson Obosa</span>
           </p>
         </div>
@@ -429,8 +425,8 @@ function NavItem({
         onClick={onClick}
         className={`w-full p-3 rounded-xl transition-all flex items-center justify-center relative overflow-hidden ${
           active
-            ? 'bg-gradient-to-br from-[#008751] to-[#00A862] text-white shadow-lg shadow-[#008751]/30'
-            : 'text-[#5A5A5A] hover:text-white hover:bg-[#008751]/10'
+            ? 'bg-white/20 backdrop-blur-sm text-white shadow-lg'
+            : 'text-white/70 hover:text-white hover:bg-white/10'
         }`}
       >
         {active && (
@@ -438,7 +434,7 @@ function NavItem({
         )}
         <span className="relative z-10">{icon}</span>
       </button>
-      <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 py-1 px-2 bg-[#0F1A0F] border border-[#008751]/30 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest whitespace-nowrap z-[100] pointer-events-none shadow-xl">
+      <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 py-1 px-2 bg-[#008751] border border-white/20 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest whitespace-nowrap z-[100] pointer-events-none shadow-xl">
         {label}
       </span>
     </div>
