@@ -55,7 +55,7 @@ service cloud.firestore {
     // ── AI Training Studio ───────────────────────────────────────────────────
     match /aiTraining/{entryId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if true;
     }
   }
 }
