@@ -769,6 +769,7 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(initialAudioUrl ?? null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const recorderRef = React.useRef<{ stop: () => void } | null>(null);
   const timerRef = React.useRef<any>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -808,7 +809,22 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
       setIsEditing(false);
     } catch (err) {
       console.error('Save failed:', err);
-      setIsEditing(false); // close anyway
+      alert('Failed to save: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setIsSaving(true);
+    try {
+      await onDelete();
+      setShowDeleteConfirm(false);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Failed to delete: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSaving(false);
     }
@@ -818,12 +834,6 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
 
   return (
     <div className="flex flex-col p-6 bg-white rounded-3xl border border-[#E5E5E5] hover:border-[#5A5A40] transition-all relative group">
-      {onDelete && (
-        <button onClick={onDelete} className="absolute -top-2 -right-2 w-7 h-7 bg-[#A12D27] text-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all z-10" title="Remove">
-          <X size={14} />
-        </button>
-      )}
-
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -918,18 +928,59 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
                 </div>
               )}
 
-              {/* Save / Cancel */}
-              <div className="flex gap-2 pt-1 border-t border-[#E5E5E5]">
-                <button
-                  onClick={save}
-                  disabled={isSaving}
-                  className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[#1A1A1A] px-4 py-2 rounded-full hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 justify-center"
-                >
-                  <Check size={11} /> {isSaving ? 'Saving...' : (onUpdate ? '✓ Save Changes' : 'Apply')}
-                </button>
-                <button onClick={() => { setIsEditing(false); setAudioBlob(null); setAudioPreviewUrl(initialAudioUrl ?? null); }} className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1A1] px-4 py-2 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all">
-                  Cancel
-                </button>
+              {/* Save / Cancel / Delete */}
+              <div className="space-y-2">
+                <div className="flex gap-2 pt-1 border-t border-[#E5E5E5]">
+                  <button
+                    onClick={save}
+                    disabled={isSaving}
+                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[#1A1A1A] px-4 py-2 rounded-full hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 justify-center"
+                  >
+                    <Check size={11} /> {isSaving ? 'Saving...' : (onUpdate ? '✓ Save Changes' : 'Apply')}
+                  </button>
+                  <button 
+                    onClick={() => { setIsEditing(false); setAudioBlob(null); setAudioPreviewUrl(initialAudioUrl ?? null); setShowDeleteConfirm(false); }} 
+                    disabled={isSaving}
+                    className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1A1] px-4 py-2 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                {/* Delete section - only for admin */}
+                {onDelete && isAdmin && (
+                  <div className="pt-2 border-t border-[#E5E5E5]">
+                    {!showDeleteConfirm ? (
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={isSaving}
+                        className="w-full flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#A12D27] px-4 py-2 border border-[#A12D27]/30 rounded-full hover:bg-[#A12D27]/5 transition-all disabled:opacity-50"
+                      >
+                        <Trash2 size={11} /> Delete This Word
+                      </button>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-[9px] text-center text-[#A12D27] font-bold uppercase">⚠️ Confirm deletion? This cannot be undone.</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleDelete}
+                            disabled={isSaving}
+                            className="flex-1 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[#A12D27] px-4 py-2 rounded-full hover:bg-[#8B1F1F] transition-all disabled:opacity-50"
+                          >
+                            <Trash2 size={11} /> {isSaving ? 'Deleting...' : 'Yes, Delete'}
+                          </button>
+                          <button
+                            onClick={() => setShowDeleteConfirm(false)}
+                            disabled={isSaving}
+                            className="flex-1 text-[10px] font-bold uppercase tracking-widest text-[#A1A1A1] px-4 py-2 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
