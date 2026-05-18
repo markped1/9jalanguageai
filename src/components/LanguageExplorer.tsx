@@ -843,105 +843,104 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
           </div>
 
           {isEditing ? (
-            <div className="mt-3 p-4 bg-[#F8F8F5] rounded-2xl border border-[#D5D5C5] space-y-4">
+            <div className="mt-2 p-3 bg-[#F8F8F5] rounded-xl border border-[#D5D5C5] space-y-2">
               {/* Header */}
-              <div className="flex items-center gap-2 pb-2 border-b border-[#E5E5E5]">
-                <Edit2 size={12} className="text-[#5A5A40]" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#5A5A40]">
-                  {isAdmin ? 'Admin Editor — All fields are fully editable' : 'Edit Entry'}
+              <div className="flex items-center gap-1.5 pb-1.5 border-b border-[#E5E5E5]">
+                <Edit2 size={10} className="text-[#5A5A40]" />
+                <span className="text-[8px] font-bold uppercase tracking-widest text-[#5A5A40]">
+                  {isAdmin ? 'Admin Editor' : 'Edit'}
                 </span>
               </div>
 
               {/* English meaning */}
               <div>
-                <label className="text-[9px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-1">English Meaning</label>
+                <label className="text-[8px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-0.5">English</label>
                 <input
                   disabled={isSaving}
                   value={editWord}
                   onChange={e => setEditWord(e.target.value)}
-                  className="w-full text-sm border border-[#E5E5E5] rounded-xl px-3 py-2 outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all"
+                  className="w-full text-xs border border-[#E5E5E5] rounded-lg px-2 py-1.5 outline-none focus:border-[#5A5A40] focus:ring-1 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all"
                   placeholder="e.g. Good morning"
                 />
               </div>
 
               {/* Edo word */}
               <div>
-                <label className="text-[9px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-1">Edo Word / Phrase <span className="text-[#5A5A40]">(replaces existing)</span></label>
+                <label className="text-[8px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-0.5">Edo Word</label>
                 <input
                   disabled={isSaving}
                   value={editTranslation}
                   onChange={e => setEditTranslation(e.target.value)}
-                  className="w-full text-lg font-serif border border-[#5A5A40]/30 rounded-xl px-3 py-2 outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all"
+                  className="w-full text-base font-serif border border-[#5A5A40]/30 rounded-lg px-2 py-1.5 outline-none focus:border-[#5A5A40] focus:ring-1 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all"
                   placeholder="e.g. Obowie"
                 />
               </div>
 
               {/* Phonetic */}
               <div>
-                <label className="text-[9px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-1">Phonetic Pronunciation Guide <span className="text-[#5A5A40]">(replaces existing)</span></label>
+                <label className="text-[8px] font-bold uppercase tracking-widest text-[#A1A1A1] block mb-0.5">Phonetic</label>
                 <input
                   disabled={isSaving}
                   value={editPhonetic}
                   onChange={e => setEditPhonetic(e.target.value)}
-                  className="w-full text-sm italic border border-[#E5E5E5] rounded-xl px-3 py-2 outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all text-[#5A5A40]"
+                  className="w-full text-xs italic border border-[#E5E5E5] rounded-lg px-2 py-1.5 outline-none focus:border-[#5A5A40] focus:ring-1 focus:ring-[#5A5A40]/10 bg-white disabled:opacity-50 transition-all text-[#5A5A40]"
                   placeholder="e.g. /Oh-bo-wee-eh/"
                 />
               </div>
 
               {/* Admin audio panel */}
               {isAdmin && (
-                <div className="p-3 bg-white rounded-xl border border-[#E5E5E5] space-y-2">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-[#5A5A40] block">
-                    🎙 Record Audio Pronunciation <span className="text-[#A1A1A1] font-normal">(replaces existing audio)</span>
+                <div className="p-2 bg-white rounded-lg border border-[#E5E5E5] space-y-1.5">
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-[#5A5A40] block">
+                    🎙 Audio
                   </span>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <button type="button" onClick={isRecording ? stopRecording : startRecording}
                       disabled={isSaving}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-[#5A5A40] text-white hover:bg-[#4A4A30]'} disabled:opacity-50`}>
-                      {isRecording ? <Square size={10} fill="currentColor" /> : <Mic size={10} />}
-                      {isRecording ? `Stop (${recordingSeconds}s)` : 'Record'}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-[#5A5A40] text-white hover:bg-[#4A4A30]'} disabled:opacity-50`}>
+                      {isRecording ? <Square size={8} fill="currentColor" /> : <Mic size={8} />}
+                      {isRecording ? `${recordingSeconds}s` : 'Rec'}
                     </button>
                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="audio/*" className="hidden" />
                     <button type="button" onClick={() => fileInputRef.current?.click()}
                       disabled={isSaving}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#F5F5F0] text-[#5A5A40] border border-[#E5E5E5] hover:border-[#5A5A40] transition-all disabled:opacity-50">
-                      <Upload size={10} /> Upload File
+                      className="flex items-center gap-1 px-2 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest bg-[#F5F5F0] text-[#5A5A40] border border-[#E5E5E5] hover:border-[#5A5A40] transition-all disabled:opacity-50">
+                      <Upload size={8} /> File
                     </button>
                     {audioPreviewUrl && (
                       <>
                         <button type="button" onClick={() => new Audio(audioPreviewUrl).play()}
                           disabled={isSaving}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all disabled:opacity-50">
-                          <Play size={10} fill="currentColor" /> Preview
+                          className="flex items-center gap-1 px-2 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all disabled:opacity-50">
+                          <Play size={8} fill="currentColor" /> Play
                         </button>
                         <button type="button" onClick={() => { setAudioBlob(null); setAudioPreviewUrl(null); }}
                           disabled={isSaving}
-                          className="p-1.5 text-[#A1A1A1] hover:text-red-500 transition-colors disabled:opacity-50" title="Clear audio">
-                          <Trash2 size={12} />
+                          className="p-1 text-[#A1A1A1] hover:text-red-500 transition-colors disabled:opacity-50" title="Clear">
+                          <Trash2 size={10} />
                         </button>
                       </>
                     )}
                   </div>
-                  {isRecording && <p className="text-[9px] text-red-500 font-bold animate-pulse uppercase">● Recording... speak clearly, then press Stop</p>}
-                  {audioBlob && !isRecording && <p className="text-[9px] text-green-600 font-bold uppercase">✓ New audio ready — will replace existing audio on Update</p>}
-                  {!audioBlob && audioPreviewUrl && <p className="text-[9px] text-blue-500 font-bold uppercase">ℹ Existing audio saved — record new audio above to replace it</p>}
+                  {isRecording && <p className="text-[7px] text-red-500 font-bold animate-pulse uppercase">● Recording...</p>}
+                  {audioBlob && !isRecording && <p className="text-[7px] text-green-600 font-bold uppercase">✓ Ready</p>}
                 </div>
               )}
 
               {/* Save / Cancel / Delete */}
-              <div className="space-y-2">
-                <div className="flex gap-2 pt-1 border-t border-[#E5E5E5]">
+              <div className="space-y-1.5">
+                <div className="flex gap-1.5 pt-1 border-t border-[#E5E5E5]">
                   <button
                     onClick={save}
                     disabled={isSaving}
-                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[#1A1A1A] px-4 py-2 rounded-full hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 justify-center"
+                    className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest text-white bg-[#1A1A1A] px-3 py-1.5 rounded-full hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 justify-center"
                   >
-                    <Check size={11} /> {isSaving ? 'Saving...' : (onUpdate ? '✓ Save Changes' : 'Apply')}
+                    <Check size={9} /> {isSaving ? 'Saving...' : 'Save'}
                   </button>
                   <button 
                     onClick={() => { setIsEditing(false); setAudioBlob(null); setAudioPreviewUrl(initialAudioUrl ?? null); setShowDeleteConfirm(false); }} 
                     disabled={isSaving}
-                    className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1A1] px-4 py-2 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all disabled:opacity-50"
+                    className="text-[8px] font-bold uppercase tracking-widest text-[#A1A1A1] px-3 py-1.5 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -949,32 +948,32 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
 
                 {/* Delete section - only for admin */}
                 {onDelete && isAdmin && (
-                  <div className="pt-2 border-t border-[#E5E5E5]">
+                  <div className="pt-1 border-t border-[#E5E5E5]">
                     {!showDeleteConfirm ? (
                       <button
                         onClick={() => setShowDeleteConfirm(true)}
                         disabled={isSaving}
-                        className="w-full flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#A12D27] px-4 py-2 border border-[#A12D27]/30 rounded-full hover:bg-[#A12D27]/5 transition-all disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-1 text-[8px] font-bold uppercase tracking-widest text-[#A12D27] px-3 py-1.5 border border-[#A12D27]/30 rounded-full hover:bg-[#A12D27]/5 transition-all disabled:opacity-50"
                       >
-                        <Trash2 size={11} /> Delete This Word
+                        <Trash2 size={9} /> Delete
                       </button>
                     ) : (
-                      <div className="space-y-2">
-                        <p className="text-[9px] text-center text-[#A12D27] font-bold uppercase">⚠️ Confirm deletion? This cannot be undone.</p>
-                        <div className="flex gap-2">
+                      <div className="space-y-1">
+                        <p className="text-[7px] text-center text-[#A12D27] font-bold uppercase">⚠️ Confirm?</p>
+                        <div className="flex gap-1.5">
                           <button
                             onClick={handleDelete}
                             disabled={isSaving}
-                            className="flex-1 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-[#A12D27] px-4 py-2 rounded-full hover:bg-[#8B1F1F] transition-all disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-1 text-[8px] font-bold uppercase tracking-widest text-white bg-[#A12D27] px-2 py-1.5 rounded-full hover:bg-[#8B1F1F] transition-all disabled:opacity-50"
                           >
-                            <Trash2 size={11} /> {isSaving ? 'Deleting...' : 'Yes, Delete'}
+                            <Trash2 size={9} /> {isSaving ? 'Deleting...' : 'Yes'}
                           </button>
                           <button
                             onClick={() => setShowDeleteConfirm(false)}
                             disabled={isSaving}
-                            className="flex-1 text-[10px] font-bold uppercase tracking-widest text-[#A1A1A1] px-4 py-2 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all disabled:opacity-50"
+                            className="flex-1 text-[8px] font-bold uppercase tracking-widest text-[#A1A1A1] px-2 py-1.5 border border-[#E5E5E5] rounded-full hover:bg-gray-50 transition-all disabled:opacity-50"
                           >
-                            Cancel
+                            No
                           </button>
                         </div>
                       </div>
@@ -1009,6 +1008,22 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
               <Volume2 size={18} />
               {audioPreviewUrl && <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white" />}
             </button>
+            
+            {/* Delete button - visible for admin */}
+            {onDelete && isAdmin && (
+              <button 
+                onClick={() => {
+                  if (window.confirm(`Delete "${translation}"?\n\nThis action cannot be undone.`)) {
+                    handleDelete();
+                  }
+                }}
+                disabled={isSaving}
+                className="p-3 bg-red-50 text-[#A12D27] rounded-full hover:bg-[#A12D27] hover:text-white transition-all shadow-sm disabled:opacity-50"
+                title="Delete this word"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
           </div>
         )}
       </div>
