@@ -101,12 +101,21 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-[#0A0F0A] via-[#0F0F0F] to-[#0A120A] flex items-center justify-center relative overflow-hidden">
+        <div className="fixed inset-0 opacity-[0.03]">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'linear-gradient(#008751 1px, transparent 1px), linear-gradient(90deg, #008751 1px, transparent 1px)',
+            backgroundSize: '50px 50px'
+          }} />
+        </div>
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          className="relative z-10"
         >
-          <Languages className="w-12 h-12 text-[#5A5A40]" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#008751] to-[#00A862] flex items-center justify-center shadow-2xl shadow-[#008751]/30">
+            <Languages className="w-8 h-8 text-white" />
+          </div>
         </motion.div>
       </div>
     );
@@ -114,38 +123,52 @@ export default function App() {
 
   if (!user && !developerUser) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-[#0A0F0A] via-[#0F0F0F] to-[#0A120A] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+        {/* Animated background */}
+        <div className="fixed inset-0 opacity-[0.03]">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'linear-gradient(#008751 1px, transparent 1px), linear-gradient(90deg, #008751 1px, transparent 1px)',
+            backgroundSize: '50px 50px'
+          }} />
+        </div>
+        
+        {/* Glowing orbs */}
+        <div className="fixed top-20 left-20 w-96 h-96 bg-[#008751]/10 rounded-full blur-3xl animate-pulse" />
+        <div className="fixed bottom-20 right-20 w-96 h-96 bg-[#00A862]/10 rounded-full blur-3xl animate-pulse delay-1000" />
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full"
+          className="max-w-md w-full relative z-10"
         >
           {/* Logo */}
           <div className="mb-8 flex justify-center">
-            <div className="w-20 h-20 bg-[#5A5A40] rounded-3xl flex items-center justify-center text-white shadow-2xl">
-              <Globe className="w-10 h-10" />
+            <div className="w-20 h-20 bg-gradient-to-br from-[#008751] to-[#00A862] rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-[#008751]/30 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer rounded-3xl" />
+              <Globe className="w-10 h-10 relative z-10" />
             </div>
           </div>
-          <h1 className="text-4xl font-serif text-white mb-3 tracking-tight leading-tight">
-            Ọmwan <span className="italic text-[#8A8A60]">AI</span>
+          <h1 className="text-5xl font-serif text-white mb-3 tracking-tight leading-tight">
+            9jai <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-[#008751] to-[#00A862]">AI</span>
           </h1>
-          <p className="text-sm text-[#5A5A40] mb-2 font-bold uppercase tracking-widest">Edo Language Assistant</p>
-          <p className="text-[#6A6A6A] mb-10 leading-relaxed text-sm">
-            Your intelligent guide to the Edo (Bini) language and culture. Ask questions, learn phrases, translate, and explore heritage — all in one place.
+          <p className="text-sm text-[#008751] mb-2 font-bold uppercase tracking-widest">Edo Language Assistant</p>
+          <p className="text-[#6A6A6A] mb-10 leading-relaxed text-sm max-w-sm mx-auto">
+            Your intelligent guide to the Edo (Bini) language and culture. Ask questions, learn phrases, translate, and explore heritage.
           </p>
 
           {!showDeveloperLogin ? (
             <div className="space-y-4">
               <button
                 onClick={() => signIn()}
-                className="w-full py-4 bg-[#5A5A40] text-white rounded-2xl font-medium hover:bg-[#6A6A50] transition-all shadow-lg flex items-center justify-center gap-3 text-sm"
+                className="w-full py-4 bg-gradient-to-r from-[#008751] to-[#00A862] text-white rounded-2xl font-medium hover:shadow-lg hover:shadow-[#008751]/30 transition-all flex items-center justify-center gap-3 text-sm relative overflow-hidden group"
               >
-                <Globe size={18} />
-                Continue with Google
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                <Globe size={18} className="relative z-10" />
+                <span className="relative z-10">Continue with Google</span>
               </button>
               <button
                 onClick={() => setShowDeveloperLogin(true)}
-                className="w-full py-4 bg-transparent border border-[#3A3A3A] text-white rounded-2xl font-medium hover:bg-[#1A1A1A] transition-all flex items-center justify-center gap-3 text-sm"
+                className="w-full py-4 bg-transparent border border-[#008751]/30 text-white rounded-2xl font-medium hover:bg-[#008751]/10 hover:border-[#008751]/50 transition-all flex items-center justify-center gap-3 text-sm"
               >
                 <Users size={18} />
                 Developer Login
@@ -153,8 +176,8 @@ export default function App() {
               <p className="mt-4 text-[#3A3A3A] text-xs">Free to use · No credit card required</p>
             </div>
           ) : (
-            <form onSubmit={handleDeveloperLogin} className="bg-[#1A1A1A] p-6 rounded-3xl border border-[#2A2A2A] text-left">
-              <h3 className="text-xl font-serif mb-4">Lexicon Developer Portal</h3>
+            <form onSubmit={handleDeveloperLogin} className="bg-[#0F1A0F]/50 backdrop-blur-xl p-6 rounded-3xl border border-[#008751]/20 text-left shadow-2xl">
+              <h3 className="text-xl font-serif mb-4 text-white">Lexicon Developer Portal</h3>
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-xs font-bold text-[#5A5A5A] mb-1 uppercase tracking-widest">Username</label>
@@ -164,7 +187,7 @@ export default function App() {
                       type="text"
                       value={devUsername}
                       onChange={(e) => setDevUsername(e.target.value)}
-                      className="w-full bg-[#0F0F0F] border border-[#3A3A3A] rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#5A5A40]"
+                      className="w-full bg-[#0A0F0A] border border-[#008751]/30 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/20 transition-all"
                     />
                   </div>
                 </div>
@@ -176,17 +199,17 @@ export default function App() {
                       type="password"
                       value={devPin}
                       onChange={(e) => setDevPin(e.target.value)}
-                      className="w-full bg-[#0F0F0F] border border-[#3A3A3A] rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#5A5A40]"
+                      className="w-full bg-[#0A0F0A] border border-[#008751]/30 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/20 transition-all"
                     />
                   </div>
                 </div>
                 {devLoginError && <p className="text-red-500 text-xs font-bold">{devLoginError}</p>}
               </div>
               <div className="flex gap-3">
-                <button type="button" onClick={() => setShowDeveloperLogin(false)} className="flex-1 py-3 bg-[#0F0F0F] text-white rounded-xl text-sm font-bold hover:bg-black transition-colors">
+                <button type="button" onClick={() => setShowDeveloperLogin(false)} className="flex-1 py-3 bg-[#0A0F0A] text-white rounded-xl text-sm font-bold hover:bg-black transition-colors border border-[#008751]/20">
                   Cancel
                 </button>
-                <button type="submit" className="flex-1 py-3 bg-[#5A5A40] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#6A6A50] transition-colors">
+                <button type="submit" className="flex-1 py-3 bg-gradient-to-r from-[#008751] to-[#00A862] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-[#008751]/30 transition-all">
                   Login <ArrowRight size={16} />
                 </button>
               </div>
@@ -198,177 +221,196 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] text-white font-sans flex">
-      {/* Sidebar */}
-      <nav className="fixed left-0 top-0 h-screen w-16 flex flex-col items-center py-6 bg-[#1A1A1A] border-r border-[#2A2A2A] z-50">
-        {/* Logo */}
-        <div className="mb-8">
-          <div className="w-9 h-9 bg-[#5A5A40] rounded-xl flex items-center justify-center">
-            <Globe className="w-5 h-5 text-white" />
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0F0A] via-[#0F0F0F] to-[#0A120A] text-white font-sans flex flex-col">
+      {/* Animated background grid */}
+      <div className="fixed inset-0 opacity-[0.03] pointer-events-none">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'linear-gradient(#008751 1px, transparent 1px), linear-gradient(90deg, #008751 1px, transparent 1px)',
+          backgroundSize: '50px 50px'
+        }} />
+      </div>
 
-        <div className="flex-1 flex flex-col gap-2 w-full px-2">
-          {/* Assistant — always visible */}
-          <NavItem
-            icon={<MessageSquare size={20} />}
-            active={activeTab === 'assistant'}
-            onClick={() => setActiveTab('assistant')}
-            label="Ọmwan AI"
-          />
-
-          {/* Admin-only sections */}
-          {isMasterAdmin && (
-            <>
-              <div className="h-px bg-[#2A2A2A] my-2 mx-2" />
-              <NavItem
-                icon={<BookOpen size={20} />}
-                active={activeTab === 'discover'}
-                onClick={() => { setActiveTab('discover'); setSelectedLanguage(null); }}
-                label="Discover"
-              />
-              <NavItem
-                icon={<Database size={20} />}
-                active={activeTab === 'repository'}
-                onClick={() => { setActiveTab('repository'); setSelectedLanguage(null); }}
-                label="Repository"
-              />
-              <NavItem
-                icon={<GraduationCap size={20} />}
-                active={activeTab === 'training'}
-                onClick={() => setActiveTab('training')}
-                label="Train AI"
-              />
-              <NavItem
-                icon={<Users size={20} />}
-                active={activeTab === 'team'}
-                onClick={() => setActiveTab('team')}
-                label="Team"
-              />
-            </>
-          )}
-
-          {/* Lexicon Explorer access (Master Admin + Developers) */}
-          {(isMasterAdmin || isDeveloper) && selectedLanguage && (
-             <NavItem
-               icon={<Brain size={20} />}
-               active={activeTab === 'explorer'}
-               onClick={() => setActiveTab('explorer')}
-               label="Explorer"
-             />
-          )}
-        </div>
-
-        {/* User avatar + sign out */}
-        <div className="flex flex-col items-center gap-3">
-          {developerUser ? (
-            <div className="w-8 h-8 rounded-full bg-[#5A5A40] text-white flex items-center justify-center text-xs font-bold border border-[#3A3A3A]" title={developerUser.username}>
-              {developerUser.username.substring(0, 2).toUpperCase()}
+      <div className="flex flex-1 relative z-10">
+        {/* Sidebar */}
+        <nav className="fixed left-0 top-0 h-screen w-16 flex flex-col items-center py-6 bg-gradient-to-b from-[#0F1A0F] to-[#0A0F0A] border-r border-[#008751]/20 backdrop-blur-xl z-50">
+          {/* Logo */}
+          <div className="mb-8">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#008751] to-[#00A862] rounded-xl flex items-center justify-center shadow-lg shadow-[#008751]/20">
+              <Globe className="w-5 h-5 text-white" />
             </div>
-          ) : user?.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt=""
-              className="w-8 h-8 rounded-full border border-[#3A3A3A]"
-              referrerPolicy="no-referrer"
+          </div>
+
+          <div className="flex-1 flex flex-col gap-2 w-full px-2">
+            {/* Assistant — always visible */}
+            <NavItem
+              icon={<MessageSquare size={20} />}
+              active={activeTab === 'assistant'}
+              onClick={() => setActiveTab('assistant')}
+              label="Ọmwan AI"
             />
-          ) : null}
-          <button
-            onClick={handleSignOut}
-            className="p-2 text-[#5A5A5A] hover:text-white transition-colors rounded-xl hover:bg-[#2A2A2A]"
-            title="Sign out"
-          >
-            <LogOut size={18} />
-          </button>
+
+            {/* Admin-only sections */}
+            {isMasterAdmin && (
+              <>
+                <div className="h-px bg-[#008751]/20 my-2 mx-2" />
+                <NavItem
+                  icon={<BookOpen size={20} />}
+                  active={activeTab === 'discover'}
+                  onClick={() => { setActiveTab('discover'); setSelectedLanguage(null); }}
+                  label="Discover"
+                />
+                <NavItem
+                  icon={<Database size={20} />}
+                  active={activeTab === 'repository'}
+                  onClick={() => { setActiveTab('repository'); setSelectedLanguage(null); }}
+                  label="Repository"
+                />
+                <NavItem
+                  icon={<GraduationCap size={20} />}
+                  active={activeTab === 'training'}
+                  onClick={() => setActiveTab('training')}
+                  label="Train AI"
+                />
+                <NavItem
+                  icon={<Users size={20} />}
+                  active={activeTab === 'team'}
+                  onClick={() => setActiveTab('team')}
+                  label="Team"
+                />
+              </>
+            )}
+
+            {/* Lexicon Explorer access (Master Admin + Developers) */}
+            {(isMasterAdmin || isDeveloper) && selectedLanguage && (
+               <NavItem
+                 icon={<Brain size={20} />}
+                 active={activeTab === 'explorer'}
+                 onClick={() => setActiveTab('explorer')}
+                 label="Explorer"
+               />
+            )}
+          </div>
+
+          {/* User avatar + sign out */}
+          <div className="flex flex-col items-center gap-3">
+            {developerUser ? (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#008751] to-[#00A862] text-white flex items-center justify-center text-xs font-bold border border-[#008751]/30 shadow-lg" title={developerUser.username}>
+                {developerUser.username.substring(0, 2).toUpperCase()}
+              </div>
+            ) : user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt=""
+                className="w-8 h-8 rounded-full border-2 border-[#008751]/30"
+                referrerPolicy="no-referrer"
+              />
+            ) : null}
+            <button
+              onClick={handleSignOut}
+              className="p-2 text-[#5A5A5A] hover:text-white transition-colors rounded-xl hover:bg-[#008751]/10"
+              title="Sign out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
+        </nav>
+
+        {/* Main content */}
+        <main className="pl-16 flex-1 min-h-screen flex flex-col">
+          <AnimatePresence mode="wait">
+            {activeTab === 'assistant' && (
+              <motion.div
+                key="assistant"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 flex flex-col h-screen"
+              >
+                <EdoAssistant user={user} isAdmin={isAdmin} />
+              </motion.div>
+            )}
+
+            {isMasterAdmin && activeTab === 'discover' && (
+              <motion.div
+                key="discover"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="flex-1"
+              >
+                <SearchLanguage
+                  onLanguageFound={(langName) => {
+                    setSelectedLanguage(langName);
+                    setActiveTab('explorer');
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {isMasterAdmin && activeTab === 'repository' && (
+              <motion.div
+                key="repository"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1"
+              >
+                <AdminRepository
+                  onSelectLanguage={(langName) => {
+                    setSelectedLanguage(langName);
+                    setActiveTab('explorer');
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {isAdmin && activeTab === 'explorer' && selectedLanguage && (
+              <motion.div
+                key="explorer"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1"
+              >
+                <LanguageExplorer languageName={selectedLanguage} currentUser={user} isAdmin={isAdmin} />
+              </motion.div>
+            )}
+
+            {isMasterAdmin && activeTab === 'training' && (
+              <motion.div
+                key="training"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 overflow-y-auto"
+              >
+                <AdminTraining />
+              </motion.div>
+            )}
+            
+            {isMasterAdmin && activeTab === 'team' && (
+              <motion.div
+                key="team"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 overflow-y-auto"
+              >
+                <TeamManagement />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-[#008751]/20 bg-gradient-to-r from-[#0A0F0A] via-[#0F1A0F] to-[#0A0F0A] backdrop-blur-xl">
+        <div className="px-6 py-4 flex items-center justify-center">
+          <p className="text-[10px] text-[#5A5A5A] font-medium tracking-wider">
+            Designed by <span className="text-[#008751] font-bold">Thompson Obosa</span>
+          </p>
         </div>
-      </nav>
-
-      {/* Main content */}
-      <main className="pl-16 flex-1 min-h-screen flex flex-col">
-        <AnimatePresence mode="wait">
-          {activeTab === 'assistant' && (
-            <motion.div
-              key="assistant"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 flex flex-col h-screen"
-            >
-              <EdoAssistant user={user} isAdmin={isAdmin} />
-            </motion.div>
-          )}
-
-          {isMasterAdmin && activeTab === 'discover' && (
-            <motion.div
-              key="discover"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="flex-1"
-            >
-              <SearchLanguage
-                onLanguageFound={(langName) => {
-                  setSelectedLanguage(langName);
-                  setActiveTab('explorer');
-                }}
-              />
-            </motion.div>
-          )}
-
-          {isMasterAdmin && activeTab === 'repository' && (
-            <motion.div
-              key="repository"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1"
-            >
-              <AdminRepository
-                onSelectLanguage={(langName) => {
-                  setSelectedLanguage(langName);
-                  setActiveTab('explorer');
-                }}
-              />
-            </motion.div>
-          )}
-
-          {isAdmin && activeTab === 'explorer' && selectedLanguage && (
-            <motion.div
-              key="explorer"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1"
-            >
-              <LanguageExplorer languageName={selectedLanguage} currentUser={user} isAdmin={isAdmin} />
-            </motion.div>
-          )}
-
-          {isMasterAdmin && activeTab === 'training' && (
-            <motion.div
-              key="training"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 overflow-y-auto"
-            >
-              <AdminTraining />
-            </motion.div>
-          )}
-          
-          {isMasterAdmin && activeTab === 'team' && (
-            <motion.div
-              key="team"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 overflow-y-auto"
-            >
-              <TeamManagement />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+      </footer>
     </div>
   );
 }
@@ -385,15 +427,18 @@ function NavItem({
     <div className="relative group">
       <button
         onClick={onClick}
-        className={`w-full p-3 rounded-xl transition-all flex items-center justify-center ${
+        className={`w-full p-3 rounded-xl transition-all flex items-center justify-center relative overflow-hidden ${
           active
-            ? 'bg-[#5A5A40] text-white'
-            : 'text-[#5A5A5A] hover:text-white hover:bg-[#2A2A2A]'
+            ? 'bg-gradient-to-br from-[#008751] to-[#00A862] text-white shadow-lg shadow-[#008751]/30'
+            : 'text-[#5A5A5A] hover:text-white hover:bg-[#008751]/10'
         }`}
       >
-        {icon}
+        {active && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+        )}
+        <span className="relative z-10">{icon}</span>
       </button>
-      <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 py-1 px-2 bg-[#2A2A2A] border border-[#3A3A3A] text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest whitespace-nowrap z-[100] pointer-events-none">
+      <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 py-1 px-2 bg-[#0F1A0F] border border-[#008751]/30 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest whitespace-nowrap z-[100] pointer-events-none shadow-xl">
         {label}
       </span>
     </div>
