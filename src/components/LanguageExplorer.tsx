@@ -214,6 +214,7 @@ export default function LanguageExplorer({
 
   const updateCoreWord = async (originalId: string, word: string, translation: string, phonetic: string, audioBlob?: Blob) => {
     try {
+      // Always save under the original static ID so useLexicon always finds it
       const updateData: any = { word, translation, phonetic, updatedAt: serverTimestamp() };
 
       if (audioBlob) {
@@ -222,20 +223,27 @@ export default function LanguageExplorer({
           updateData.audioUrl = audioUrl;
           customAudioCache[translation.toLowerCase().trim()] = audioUrl;
           customAudioCache[originalId.toLowerCase().trim()] = audioUrl;
+          customAudioCache[word.toLowerCase().trim()] = audioUrl; // also cache by English
         } catch (audioErr) {
           console.warn('Audio upload failed, saving text only:', audioErr);
         }
       }
 
-      if (originalId !== translation) {
-        // Edo word changed — write to new doc ID, delete old one
-        await setDoc(doc(db, 'coreVocabAudio', translation), updateData, { merge: true });
-        await deleteDoc(doc(db, 'coreVocabAudio', originalId));
-      } else {
-        await setDoc(doc(db, 'coreVocabAudio', originalId), updateData, { merge: true });
-      }
+      // Always write to the original static ID — never rename the doc
+      await setDoc(doc(db, 'coreVocabAudio', originalId), updateData, { merge: true });
     } catch (error) {
       console.error('updateCoreWord failed:', error);
+      throw error;
+    }
+  };
+
+  const deleteCoreWord = async (originalId: string) => {
+    try {
+      await deleteDoc(doc(db, 'coreVocabAudio', originalId));
+      // Remove from cache
+      delete customAudioCache[originalId.toLowerCase().trim()];
+    } catch (error) {
+      console.error('deleteCoreWord failed:', error);
       throw error;
     }
   };
@@ -511,7 +519,8 @@ export default function LanguageExplorer({
                       {cat.entries.map(entry => (
                         <WordRow key={entry.id} word={entry.english} translation={entry.edoWord}
                           phonetic={entry.phonetic} audioUrl={entry.audioUrl} isAdmin={isAdmin}
-                          onUpdate={(w, t, p, blob) => updateCoreWord(entry.id, w, t, p, blob)} />
+                          onUpdate={(w, t, p, blob) => updateCoreWord(entry.id, w, t, p, blob)}
+                          onDelete={isAdmin ? () => deleteCoreWord(entry.id) : undefined} />
                       ))}
                     </div>
                   </div>
@@ -707,6 +716,7 @@ export default function LanguageExplorer({
                            phonetic={item.phonetic}
                            isAdmin={isAdmin}
                            onUpdate={isAdmin ? (w, t, p, blob) => updateCoreWord(item.term, w, t, p, blob) : undefined}
+                           onDelete={isAdmin ? () => deleteCoreWord(item.term) : undefined}
                         />
                       ))}
                     </div>
@@ -807,13 +817,8 @@ function WordRow({ word, translation, phonetic, audioUrl: initialAudioUrl, isAdm
   const inputCls = 'w-full border-2 border-[#E5E5E5] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#5A5A40] focus:ring-2 focus:ring-[#5A5A40]/20 transition-colors bg-white text-[#1A1A1A] placeholder-[#A1A1A1]';
 
   return (
-    <div className={`flex flex-col p-6 bg-white rounded-3xl border transition-all relative group ${
-      status === 'listening' ? 'border-[#5A5A40] ring-4 ring-[#5A5A40]/10' :
-      status === 'success' ? 'border-[#2D5A27] bg-[#F0F5F0]' :
-      status === 'fail' ? 'border-[#A12D27] bg-[#F5F0F0]' :
-      'border-[#E5E5E5] hover:border-[#5A5A40]'
-    }`}>
-      {isPersonal && (
+    <div className="flex flex-col p-6 bg-white rounded-3xl border border-[#E5E5E5] hover:border-[#5A5A40] transition-all relative group">
+      {onDelete && (
         <button onClick={onDelete} className="absolute -top-2 -right-2 w-7 h-7 bg-[#A12D27] text-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all z-10" title="Remove">
           <X size={14} />
         </button>
